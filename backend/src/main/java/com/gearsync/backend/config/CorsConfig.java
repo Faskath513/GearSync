@@ -1,5 +1,5 @@
 package com.gearsync.backend.config;
-
+import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -23,4 +23,6 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
+
 }
