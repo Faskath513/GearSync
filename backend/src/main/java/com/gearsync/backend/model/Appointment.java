@@ -11,39 +11,34 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "projects")
+@Table(name = "appointments")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Project {
+public class Appointment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
-    private String projectName;
-
-    @Column(length = 2000, nullable = false)
-    private String description;
+    private LocalDateTime scheduledDateTime;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProjectStatus status = ProjectStatus.PENDING;
+    private AppointmentStatus status = AppointmentStatus.SCHEDULED;
 
-    @Column(nullable = false)
-    private BigDecimal estimatedCost;
+    @Column(length = 1000)
+    private String customerNotes;
 
-    private BigDecimal actualCost;
+    @Column(length = 1000)
+    private String employeeNotes;
 
-    @Column(nullable = false)
-    private Integer estimatedDurationHours;
+    private BigDecimal finalCost;
 
-    private LocalDateTime startDate;
+    private LocalDateTime actualStartTime;
 
-    private LocalDateTime completionDate;
-
-    private LocalDateTime expectedCompletionDate;
+    private LocalDateTime actualEndTime;
 
     @Column(nullable = false)
     private Integer progressPercentage = 0;
@@ -65,13 +60,17 @@ public class Project {
     private Vehicle vehicle;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "service_id", nullable = false)
+    private Service service;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_employee_id")
     private User assignedEmployee;
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<TimeLog> timeLogs = new HashSet<>();
 
-    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "appointment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<ServiceProgress> progressUpdates = new HashSet<>();
 
 }

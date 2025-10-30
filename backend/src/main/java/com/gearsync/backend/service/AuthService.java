@@ -1,29 +1,28 @@
 package com.gearsync.backend.service;
-
+import com.gearsync.backend.dto.UserRegisterDTO;
 import com.gearsync.backend.model.User;
 import com.gearsync.backend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final ModelMapper modelMapper;
 
     public boolean isEmailRegistered(String email) {
         return userRepository.findByEmail(email).isPresent();
     }
 
-    public User register(User user) {
-        // encode password before saving
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    public User register(UserRegisterDTO userRegisterDTO) {
+        User user = modelMapper.map(userRegisterDTO, User.class);
+        user.setPassword(passwordEncoder.encode(userRegisterDTO.getPassword()));
         return userRepository.save(user);
     }
 
@@ -34,7 +33,6 @@ public class AuthService {
         return passwordEncoder.matches(rawPassword, user.getPassword());
     }
 
-    // 👇 Add this so controller can fetch the full User
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
