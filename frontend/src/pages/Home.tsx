@@ -1,7 +1,7 @@
 import React from "react";
 import { Car, Wrench, Calendar, Clock, MessageCircle, CheckCircle, Phone, Mail, MapPin } from "lucide-react";
 import ChatWidget from "../components/ChatWidget";
-import Navbar from "../components/Navbar";
+
 
 const Home: React.FC = () => {
   const features = [
@@ -52,9 +52,6 @@ const Home: React.FC = () => {
           style={{ animationDelay: "4s" }}
         ></div>
       </div>
-
-      {/* ✅ Navbar */}
-      <Navbar />
 
       {/* Main Content */}
       <div className="relative z-10 px-6 py-12">

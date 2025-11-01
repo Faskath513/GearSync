@@ -1,3 +1,4 @@
+// App.tsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
@@ -7,14 +8,16 @@ import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
 import CustomerDashboard from "./pages/Customer/CustomerDashboard";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import Login from "./components/auth/LoginForm";
+import Register from "./components/auth/RegisterForm";
 
-const Footer: React.FC = () => {
-  return (
-    <footer className="bg-gray-100 text-center py-4">
-      <div className="container mx-auto text-sm text-gray-600">© {new Date().getFullYear()} GearSync</div>
-    </footer>
-  );
-};
+const Footer: React.FC = () => (
+  <footer className="bg-gray-100 text-center py-4">
+    <div className="container mx-auto text-sm text-gray-600">
+      © {new Date().getFullYear()} GearSync
+    </div>
+  </footer>
+);
 
 const App: React.FC = () => {
   return (
@@ -22,13 +25,15 @@ const App: React.FC = () => {
       <Router>
         <div className="flex flex-col min-h-screen">
           <Navbar />
-
-          {/* Main Content */}
           <main className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
 
-              {/* Admin Dashboard */}
+              {/* public login route */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              {/* protected routes */}
               <Route
                 path="/admin-dashboard"
                 element={
@@ -37,8 +42,6 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
-
-              {/* Employee Dashboard */}
               <Route
                 path="/employee-dashboard"
                 element={
@@ -47,8 +50,6 @@ const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
-
-              {/* Customer Dashboard */}
               <Route
                 path="/customer-dashboard"
                 element={
@@ -58,11 +59,10 @@ const App: React.FC = () => {
                 }
               />
 
-              {/* Optional fallback route */}
+              {/* fallback */}
               <Route path="*" element={<Home />} />
             </Routes>
           </main>
-
           <Footer />
         </div>
       </Router>
