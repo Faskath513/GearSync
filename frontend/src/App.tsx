@@ -1,56 +1,16 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import Home from "./pages/Home";
-import AdminDashboard from "./pages/Admin/AdminDashboard";
-import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
-import CustomerDashboard from "./pages/Customer/CustomerDashboard";
-import ProtectedRoute from "./pages/ProtectedRoute";
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Landing from './pages/Landing';
 
-const App: React.FC = () => {
+function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Route */}
-          <Route path="/" element={<Home />} />
-
-          {/* Admin Dashboard */}
-          <Route
-            path="/admin-dashboard"
-            element={
-              <ProtectedRoute requiredRole="ADMIN">
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Employee Dashboard */}
-          <Route
-            path="/employee-dashboard"
-            element={
-              <ProtectedRoute requiredRole="EMPLOYEE">
-                <EmployeeDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Customer Dashboard */}
-          <Route
-            path="/customer-dashboard"
-            element={
-              <ProtectedRoute requiredRole="CUSTOMER">
-                <CustomerDashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Optional fallback route */}
-          <Route path="*" element={<Home />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+      </Routes>
+    </BrowserRouter>
   );
-};
+}
 
 export default App;
+
