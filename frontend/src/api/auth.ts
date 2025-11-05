@@ -6,7 +6,6 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Attach token automatically for authenticated requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -34,14 +33,22 @@ export interface LoginResponse {
   role: "CUSTOMER" | "EMPLOYEE" | "ADMIN";
 }
 
+// Login API
 export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   const res = await api.post<LoginResponse>("/auth/login", data);
-  return res.data; // { token, role }
+  return res.data;
 };
 
+// Register API
 export const register = async (data: RegisterRequest) => {
   const res = await api.post("/auth/register", data);
-  return res.data; // saved user
+  return res.data;
+};
+
+// Forgot Password API (send OTP)
+export const forgotPassword = async (email: string) => {
+  const res = await api.post("/auth/forgot-password", { email });
+  return res.data; // { message, resetToken }
 };
 
 export default api;

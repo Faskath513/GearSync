@@ -152,11 +152,7 @@ const Home: React.FC = () => {
                     <p className="text-gray-300">Sign in to track your vehicle's service progress</p>
                   </div>
                   <LoginForm />
-                  <div className="text-center">
-                    <a href="#" className="text-blue-400 hover:text-blue-300 text-sm hover:underline">
-                      Forgot your password?
-                    </a>
-                  </div>
+                
                 </div>
               ) : (
                 <div className="space-y-6">
