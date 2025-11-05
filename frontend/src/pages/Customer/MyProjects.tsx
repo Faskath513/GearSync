@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FolderKanban } from "lucide-react";
-import axios from "axios";
+import { listMyProjects } from "../../api/projects";
 
 const MyProjects: React.FC = () => {
   const [projects, setProjects] = useState([]);
@@ -12,14 +12,8 @@ const MyProjects: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:8080/api/customer/projects",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setProjects(response.data);
+      const data = await listMyProjects();
+      setProjects(data);
     } catch (error) {
       console.error("Error fetching projects:", error);
     } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Plus, Clock, Car } from "lucide-react";
-import axios from "axios";
+import { listMyAppointments } from "../../api/appointments";
 
 const MyAppointments: React.FC = () => {
   const [appointments, setAppointments] = useState([]);
@@ -12,14 +12,8 @@ const MyAppointments: React.FC = () => {
 
   const fetchAppointments = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:8080/api/customer/appointments",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setAppointments(response.data);
+      const data = await listMyAppointments();
+      setAppointments(data);
     } catch (error) {
       console.error("Error fetching appointments:", error);
     } finally {

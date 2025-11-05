@@ -24,6 +24,11 @@ export const updateAppointmentStatus = async (
   return res.data;
 };
 
+export const getAppointmentTimeLogs = async (id: number): Promise<any[]> => {
+  const res = await api.get<any[]>(`/employee/appointments/${id}/timelogs`);
+  return res.data;
+};
+
 // Projects assigned to employee
 export const listAssignedProjects = async (): Promise<any[]> => {
   const res = await api.get<any[]>("/employee/projects");
@@ -43,39 +48,9 @@ export const updateProjectStatus = async (
   return res.data;
 };
 
-// Employee time logs
-export interface TimeLogRequestDTO {
-  appointmentId?: number;
-  projectId?: number;
-  description: string;
-  hours: number;
-}
-
-export interface TimeLogUpdateDTO {
-  description?: string;
-  hours?: number;
-}
-
-export const createTimeLog = async (payload: TimeLogRequestDTO): Promise<any> => {
-  const res = await api.post<any>("/employee/timelogs", payload);
+export const getProjectTimeLogs = async (id: number): Promise<any[]> => {
+  const res = await api.get<any[]>(`/employee/projects/${id}/timelogs`);
   return res.data;
-};
-
-export const listMyTimeLogs = async (): Promise<any[]> => {
-  const res = await api.get<any[]>("/employee/timelogs");
-  return res.data;
-};
-
-export const updateTimeLog = async (
-  id: number,
-  payload: TimeLogUpdateDTO
-): Promise<any> => {
-  const res = await api.put<any>(`/employee/timelogs/${id}`, payload);
-  return res.data;
-};
-
-export const deleteTimeLog = async (id: number): Promise<void> => {
-  await api.delete(`/employee/timelogs/${id}`);
 };
 
 

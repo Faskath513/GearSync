@@ -1,21 +1,44 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { CheckSquare, FileText, User, LogOut } from "lucide-react";
+import { CheckSquare, FileText } from "lucide-react";
+import { listAssignedAppointments, listAssignedProjects } from "../../api/employee";
 
 const EmployeeDashboard: React.FC = () => {
   const { logout, role } = useContext(AuthContext)!;
   const navigate = useNavigate();
+
+  const [assignedAppointments, setAssignedAppointments] = useState<any[]>([]);
+  const [assignedProjects, setAssignedProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const [apps, projs] = await Promise.all([
+          listAssignedAppointments().catch(() => []),
+          listAssignedProjects().catch(() => []),
+        ]);
+        setAssignedAppointments(apps || []);
+        setAssignedProjects(projs || []);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const totalAssigned = assignedAppointments.length + assignedProjects.length;
+  const completedCount = [...assignedAppointments, ...assignedProjects].filter((x: any) => (x?.status || "").toLowerCase() === "completed").length;
+  const pendingCount = [...assignedAppointments, ...assignedProjects].filter((x: any) => (x?.status || "").toLowerCase() === "pending").length;
   const stats = [
-    { title: "Assigned Tasks", value: 12, color: "from-purple-400 to-indigo-500", icon: <CheckSquare className="w-6 h-6" /> },
-    { title: "Completed Tasks", value: 8, color: "from-green-400 to-teal-500", icon: <CheckSquare className="w-6 h-6" /> },
-    { title: "Pending Reviews", value: 3, color: "from-yellow-400 to-orange-400", icon: <FileText className="w-6 h-6" /> },
+    { title: "Assigned Items", value: totalAssigned, color: "from-purple-400 to-indigo-500", icon: <CheckSquare className="w-6 h-6" /> },
+    { title: "Completed", value: completedCount, color: "from-green-400 to-teal-500", icon: <CheckSquare className="w-6 h-6" /> },
+    { title: "Pending", value: pendingCount, color: "from-yellow-400 to-orange-400", icon: <FileText className="w-6 h-6" /> },
   ];
 
   return (
@@ -36,7 +59,11 @@ const EmployeeDashboard: React.FC = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat, idx) => (
+          {(loading ? [
+            { title: "Assigned Items", value: "-", color: "from-purple-400 to-indigo-500", icon: <CheckSquare className="w-6 h-6" /> },
+            { title: "Completed", value: "-", color: "from-green-400 to-teal-500", icon: <CheckSquare className="w-6 h-6" /> },
+            { title: "Pending", value: "-", color: "from-yellow-400 to-orange-400", icon: <FileText className="w-6 h-6" /> },
+          ] : stats).map((stat, idx) => (
             <div
               key={idx}
               className={`relative overflow-hidden rounded-3xl p-6 shadow-2xl border border-white/10 bg-gradient-to-r ${stat.color} text-white hover:scale-[1.03] transform transition-all duration-300`}
@@ -53,15 +80,41 @@ const EmployeeDashboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Lists */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl text-white hover:shadow-white/20 transition-all duration-300">
-            <h2 className="font-bold text-xl mb-2">Task Overview</h2>
-            <p className="text-gray-300 text-sm">View your current tasks, their progress, and pending assignments.</p>
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl text-white">
+            <h2 className="font-bold text-xl mb-4">Assigned Appointments</h2>
+            {loading ? (
+              <p className="text-gray-300 text-sm">Loading...</p>
+            ) : assignedAppointments.length === 0 ? (
+              <p className="text-gray-300 text-sm">No appointments assigned.</p>
+            ) : (
+              <ul className="space-y-2">
+                {assignedAppointments.slice(0, 5).map((a: any) => (
+                  <li key={a.id} className="flex items-center justify-between">
+                    <span className="text-sm">#{a.id} • {(a.status || "").toString()}</span>
+                    <button onClick={() => navigate(`/employee/appointments/${a.id}`)} className="text-indigo-200 hover:text-white text-sm">View</button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl text-white hover:shadow-white/20 transition-all duration-300">
-            <h2 className="font-bold text-xl mb-2">Reports</h2>
-            <p className="text-gray-300 text-sm">Check detailed reports of your work and team performance.</p>
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-2xl text-white">
+            <h2 className="font-bold text-xl mb-4">Assigned Projects</h2>
+            {loading ? (
+              <p className="text-gray-300 text-sm">Loading...</p>
+            ) : assignedProjects.length === 0 ? (
+              <p className="text-gray-300 text-sm">No projects assigned.</p>
+            ) : (
+              <ul className="space-y-2">
+                {assignedProjects.slice(0, 5).map((p: any) => (
+                  <li key={p.id} className="flex items-center justify-between">
+                    <span className="text-sm">#{p.id} • {(p.status || "").toString()}</span>
+                    <button onClick={() => navigate(`/employee/projects/${p.id}`)} className="text-indigo-200 hover:text-white text-sm">View</button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </main>

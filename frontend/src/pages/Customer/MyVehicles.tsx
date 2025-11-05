@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Car, Plus } from "lucide-react";
-import axios from "axios";
+import { listMyVehicles } from "../../api/vehicles";
 
 const MyVehicles: React.FC = () => {
   const [vehicles, setVehicles] = useState([]);
@@ -12,14 +12,8 @@ const MyVehicles: React.FC = () => {
 
   const fetchVehicles = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        "http://localhost:8080/api/customer/vehicles",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setVehicles(response.data);
+      const data = await listMyVehicles();
+      setVehicles(data);
     } catch (error) {
       console.error("Error fetching vehicles:", error);
     } finally {
