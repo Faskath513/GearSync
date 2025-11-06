@@ -16,6 +16,7 @@ const RegisterForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const validate = () => {
     if (!firstName.trim()) return "First name is required.";
@@ -74,7 +75,22 @@ const RegisterForm: React.FC = () => {
         error.response?.data ||
         error.message ||
         "Error registering. Please try again.";
-      setError(errorMessage);
+      
+      // Check if it's an email already registered error
+      if (
+        error.response?.status === 400 &&
+        (errorMessage.includes("Email already registered") ||
+         errorMessage.includes("already exists") ||
+         errorMessage.includes("already registered"))
+      ) {
+        setError("This email is already registered. Please use a different email or try logging in.");
+        setEmailError("This email is already registered");
+        // Clear email field to encourage user to enter a different one
+        setEmail("");
+      } else {
+        setError(errorMessage);
+        setEmailError(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -131,7 +147,19 @@ const RegisterForm: React.FC = () => {
                 className="mb-4 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300"
               >
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>{error}</span>
+                <div className="flex-1">
+                  <span>{error}</span>
+                  {error.includes("already registered") && (
+                    <div className="mt-2">
+                      <Link
+                        to="/login"
+                        className="text-red-200 hover:text-red-100 underline underline-offset-2"
+                      >
+                        Click here to login instead
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -162,13 +190,30 @@ const RegisterForm: React.FC = () => {
                 required
               />
 
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-                required
-              />
+              <div>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailError(null); // Clear email error when user types
+                    setError(null); // Clear general error when user types
+                  }}
+                  placeholder="Email"
+                  className={`w-full rounded-lg border ${
+                    emailError
+                      ? "border-red-500/50 bg-red-500/5"
+                      : "border-white/10 bg-white/5"
+                  } px-4 py-3 text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 ${
+                    emailError ? "focus:ring-red-300" : "focus:ring-cyan-300"
+                  }`}
+                  required
+                  autoComplete="email"
+                />
+                {emailError && (
+                  <p className="mt-1 text-xs text-red-400">{emailError}</p>
+                )}
+              </div>
               <input
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
