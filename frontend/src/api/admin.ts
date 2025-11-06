@@ -55,6 +55,32 @@ export interface DashboardStats {
   confirmedAppointments: any[];
   todayAppointments: any[];
 }
+// A vehicle summary for admin context
+export interface AdminCustomerVehicleDTO {
+  id?: number;
+  registrationNumber?: string;
+  make?: string;
+  model?: string;
+  year?: number | string;
+  color?: string;
+  vinNumber?: string;
+  mileage?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+// Mirrors (loosely) CustomerWithVehiclesDTO from backend
+export interface AdminCustomerWithVehiclesDTO {
+  id?: number;
+  firstName?: string;
+  lastName?: string;
+  name?: string; // if backend already concatenates
+  email?: string;
+  phoneNumber?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  vehicles?: AdminCustomerVehicleDTO[];
+}
 
 // Dashboard API Calls
 export const getDashboardUserCount = async (): Promise<number> => {
@@ -90,4 +116,17 @@ export const getDashboardConfirmedAppointments = async (): Promise<any[]> => {
 export const getDashboardTodayAppointments = async (): Promise<any[]> => {
   const res = await api.get("admin/dashboard/appointments/today");
   return Array.isArray(res.data) ? res.data : [];
+};
+
+export const listCustomersWithVehicles = async (): Promise<AdminCustomerWithVehiclesDTO[]> => {
+  const res = await api.get<AdminCustomerWithVehiclesDTO[]>("admin/customers");
+  return Array.isArray(res.data) ? res.data : [];
+};
+
+// GET: one customer (by id) with their vehicles
+export const getCustomerWithVehicles = async (
+  customerId: number
+): Promise<AdminCustomerWithVehiclesDTO> => {
+  const res = await api.get<AdminCustomerWithVehiclesDTO>(`admin/customers/${customerId}`);
+  return res.data;
 };

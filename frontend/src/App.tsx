@@ -16,11 +16,13 @@ import ChangePassword from "./components/auth/ChangePassword";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import UserManagement from "./pages/Admin/UserManagement";
 import AppointmentsManagement from "./pages/Admin/AppointmentsManagement";
-import VehiclesManagement from "./pages/Admin/VehiclesManagement";
+import VehiclesList from "./pages/Admin/VehiclesList";
 import ServicesManagement from "./pages/Admin/ServicesManagement";
 import Reports from "./pages/Admin/Reports";
 import Settings from "./pages/Admin/Settings";
 import ProjectsManagement from "./pages/Admin/ProjectsManagement";
+import AdminCustomers from "./pages/Admin/CustomerDetails";
+import AdminCustomerDetails from "./pages/Admin/AdminCustomerDetails";
 
 // Customer Pages
 import CustomerDashboard from "./pages/Customer/CustomerDashboard";
@@ -85,9 +87,11 @@ const App: React.FC = () => {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="appointments" element={<AppointmentsManagement />} />
-            <Route path="vehicles" element={<VehiclesManagement />} />
+            <Route path="vehicles" element={<VehiclesList />} />
             <Route path="services" element={<ServicesManagement />} />
             <Route path="/admin-dashboard/projects" element={<ProjectsManagement />} />
+            <Route path="/admin-dashboard/customers" element={<AdminCustomers />} />
+            <Route path="/admin-dashboard/customers/:id" element={<AdminCustomerDetails />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
           </Route>
