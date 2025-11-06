@@ -11,4 +11,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
     boolean existsByRegistrationNumber(String registrationNumber);
 
     long countByOwner_Email(String email);
+
+    List<Vehicle> findByOwnerId(Long ownerId);
+
 }
