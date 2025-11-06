@@ -1,6 +1,7 @@
 package com.gearsync.backend.service;
 import com.gearsync.backend.dto.UserRegisterDTO;
 import com.gearsync.backend.model.User;
+import com.gearsync.backend.model.Role;
 import com.gearsync.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -23,6 +24,10 @@ public class AuthService {
     public User register(UserRegisterDTO userRegisterDTO) {
         User user = modelMapper.map(userRegisterDTO, User.class);
         user.setPassword(passwordEncoder.encode(userRegisterDTO.getPassword()));
+        // Ensure role defaults to CUSTOMER if not provided or empty
+        if (user.getRole() == null || userRegisterDTO.getRole() == null || userRegisterDTO.getRole().isEmpty()) {
+            user.setRole(Role.CUSTOMER);
+        }
         return userRepository.save(user);
     }
 

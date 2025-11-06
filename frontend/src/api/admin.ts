@@ -35,30 +35,74 @@ export const addAdmin = async (payload: AdminRegisterDTO): Promise<User> => {
   return data;
 };
 
-export const listEmployees = async (): Promise<User[]> => {
-  const { data } = await api.get<User[]>("/admin/employees");
+export interface UserDto {
+  id?: number;
+  name: string;
+  email: string;
+  role: string;
+  phoneNumber?: string;
+}
+
+export const listEmployees = async (): Promise<UserDto[]> => {
+  const { data } = await api.get<UserDto[]>("/admin/employees");
   return data;
 };
 
 // ----- Appointments
 export interface AssignAppointmentDTO { employeeId: number; }
 
+export interface AppointmentResponseDTO {
+  id: number;
+  scheduledDateTime: string;
+  status: string;
+  customerNotes?: string;
+  employeeNotes?: string;
+  estimatedCost?: number;
+  finalCost?: number;
+  progressPercentage?: number;
+  customerId: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  vehicleId: number;
+  vehicleRegistrationNumber: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  services?: Array<{
+    id: number;
+    serviceName: string;
+    description?: string;
+    price?: number;
+  }>;
+  assignedEmployeeId?: number;
+  assignedEmployeeName?: string;
+  assignedEmployeeEmail?: string;
+  actualStartTime?: string;
+  actualEndTime?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const assignEmployeeToAppointment = async (
   id: number,
   payload: AssignAppointmentDTO
-): Promise<void> => {
-  await api.put(`/admin/appointments/${id}/assign`, payload);
+): Promise<AppointmentResponseDTO> => {
+  const { data } = await api.put<AppointmentResponseDTO>(`/admin/appointments/${id}/assign`, payload);
+  return data;
 };
 
 export const reassignEmployeeToAppointment = async (
   id: number,
   payload: AssignAppointmentDTO
-): Promise<void> => {
-  await api.put(`/admin/appointments/${id}/reassign`, payload);
+): Promise<AppointmentResponseDTO> => {
+  const { data } = await api.put<AppointmentResponseDTO>(`/admin/appointments/${id}/reassign`, payload);
+  return data;
 };
 
-export const unassignEmployeeFromAppointment = async (id: number): Promise<void> => {
-  await api.delete(`/admin/appointments/${id}/unassign`);
+export const unassignEmployeeFromAppointment = async (id: number): Promise<AppointmentResponseDTO> => {
+  const res = await api.delete<AppointmentResponseDTO>(`/admin/appointments/${id}/unassign`);
+  return res.data;
 };
 
 // ----- Projects
@@ -66,24 +110,57 @@ export interface ApproveProjectDTO { employeeId: number; notes?: string; }
 export interface RejectProjectDTO { reason: string; }
 export interface AssignProjectDTO { employeeId: number; }
 
+export interface ProjectResponseDTO {
+  id: number;
+  projectName: string;
+  description?: string;
+  status: string;
+  estimatedCost?: number;
+  actualCost?: number;
+  estimatedDurationHours?: number;
+  startDate?: string;
+  completionDate?: string;
+  expectedCompletionDate?: string;
+  progressPercentage?: number;
+  customerId: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  vehicleId: number;
+  vehicleRegistrationNumber: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  assignedEmployeeId?: number;
+  assignedEmployeeName?: string;
+  assignedEmployeeEmail?: string;
+  additionalNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const approveAndAssignProject = async (
   id: number,
   payload: ApproveProjectDTO
-): Promise<void> => {
-  await api.put(`/admin/projects/${id}/approve`, payload);
+): Promise<ProjectResponseDTO> => {
+  const { data } = await api.put<ProjectResponseDTO>(`/admin/projects/${id}/approve`, payload);
+  return data;
 };
 
-export const rejectProject = async (id: number, payload: RejectProjectDTO): Promise<void> => {
-  await api.put(`/admin/projects/${id}/reject`, payload);
+export const rejectProject = async (id: number, payload: RejectProjectDTO): Promise<ProjectResponseDTO> => {
+  const { data } = await api.put<ProjectResponseDTO>(`/admin/projects/${id}/reject`, payload);
+  return data;
 };
 
 export const assignEmployeeToProject = async (
   id: number,
   payload: AssignProjectDTO
-): Promise<void> => {
-  await api.put(`/admin/projects/${id}/assign`, payload);
+): Promise<ProjectResponseDTO> => {
+  const { data } = await api.put<ProjectResponseDTO>(`/admin/projects/${id}/assign`, payload);
+  return data;
 };
 
-export const unassignEmployeeFromProject = async (id: number): Promise<void> => {
-  await api.delete(`/admin/projects/${id}/unassign`);
+export const unassignEmployeeFromProject = async (id: number): Promise<ProjectResponseDTO> => {
+  const res = await api.delete<ProjectResponseDTO>(`/admin/projects/${id}/unassign`);
+  return res.data;
 };

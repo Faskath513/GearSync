@@ -14,7 +14,7 @@ const MyVehicles: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:8080/api/customer/vehicles",
+        "http://localhost:8082/api/customer/vehicles",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

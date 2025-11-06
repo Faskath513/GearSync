@@ -52,15 +52,39 @@ const LoginForm: React.FC<Props> = ({ fullPage = true }) => {
 
     try {
       setLoading(true);
-      const res = await login({ email, password }); // expected: { token, role }
+      const res = await login({ email, password }); // expected: { token, role, isFirstLogin }
       saveAuth(res.token, res.role);
-      goByRole(res.role as Role);
+      
+      // If first login, redirect to change password
+      if (res.isFirstLogin) {
+        navigate("/change-password");
+      } else {
+        goByRole(res.role as Role);
+      }
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Invalid credentials. Please try again.";
-      setFormError(msg);
+      // Extract error message from various possible response formats
+      let errorMessage = "Invalid credentials. Please try again.";
+      
+      if (err?.response?.data) {
+        const data = err.response.data;
+        // If backend returns a string directly (e.g., "Invalid email or password")
+        if (typeof data === 'string') {
+          errorMessage = data;
+        }
+        // If backend returns an object with a message field
+        else if (data?.message) {
+          errorMessage = data.message;
+        }
+        // If backend returns an object with an error field
+        else if (data?.error) {
+          errorMessage = data.error;
+        }
+      } else if (err?.message && !err.message.includes("status code")) {
+        // Only use err.message if it's not a generic status code message
+        errorMessage = err.message;
+      }
+      
+      setFormError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -149,11 +173,18 @@ const LoginForm: React.FC<Props> = ({ fullPage = true }) => {
           </button>
         </form>
 
-        <div className="mt-4 text-sm text-slate-400">
-          Don’t have an account?{' '}
-          <Link to="/register" className="text-cyan-300 hover:text-cyan-200 underline-offset-4 hover:underline">
-            Register
-          </Link>
+        <div className="mt-4 space-y-2 text-sm text-slate-400">
+          <div>
+            Don't have an account?{' '}
+            <Link to="/register" className="text-cyan-300 hover:text-cyan-200 underline-offset-4 hover:underline">
+              Register
+            </Link>
+          </div>
+          <div>
+            <Link to="/forgot-password" className="text-cyan-300 hover:text-cyan-200 underline-offset-4 hover:underline">
+              Forgot password?
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -14,7 +14,7 @@ const MyAssignments: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:8080/api/employee/appointments",
+        "http://localhost:8082/api/employee/appointments",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

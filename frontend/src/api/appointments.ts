@@ -25,10 +25,43 @@ export interface MyAppointmentDTO {
   };
 }
 
+export interface AppointmentResponseDTO {
+  id: number;
+  scheduledDateTime: string;
+  status: string;
+  customerNotes?: string;
+  employeeNotes?: string;
+  estimatedCost?: number;
+  finalCost?: number;
+  progressPercentage?: number;
+  customerId: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  vehicleId: number;
+  vehicleRegistrationNumber: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  vehicleYear: string;
+  services?: Array<{
+    id: number;
+    serviceName: string;
+    description?: string;
+    price?: number;
+  }>;
+  assignedEmployeeId?: number;
+  assignedEmployeeName?: string;
+  assignedEmployeeEmail?: string;
+  actualStartTime?: string;
+  actualEndTime?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const bookAppointment = async (
   payload: AppointmentRequest
-): Promise<any> => {
-  const res = await api.post("/customer/appointments", payload);
+): Promise<AppointmentResponseDTO> => {
+  const res = await api.post<AppointmentResponseDTO>("/customer/appointments", payload);
   return res.data;
 };
 
@@ -45,13 +78,13 @@ export const getMyAppointment = async (id: number): Promise<MyAppointmentDTO> =>
 export const updateMyAppointment = async (
   id: number,
   payload: AppointmentUpdateRequest
-): Promise<any> => {
-  const res = await api.put(`/customer/appointments/${id}`, payload);
+): Promise<AppointmentUpdateRequest> => {
+  const res = await api.put<AppointmentUpdateRequest>(`/customer/appointments/${id}`, payload);
   return res.data;
 };
 
-export const cancelMyAppointment = async (id: number): Promise<any> => {
-  const res = await api.put(`/customer/appointments/${id}/cancel`);
+export const cancelMyAppointment = async (id: number): Promise<AppointmentResponseDTO> => {
+  const res = await api.put<AppointmentResponseDTO>(`/customer/appointments/${id}/cancel`);
   return res.data;
 };
 

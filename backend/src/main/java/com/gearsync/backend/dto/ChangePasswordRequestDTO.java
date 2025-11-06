@@ -1,7 +1,7 @@
 package com.gearsync.backend.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,10 +15,7 @@ public class ChangePasswordRequestDTO {
     private String oldPassword;
 
     @NotBlank(message = "New password is required")
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
-            message = "Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character"
-    )
+    @Size(min = 5, message = "Password must be at least 5 characters")
     private String newPassword;
 
     @NotBlank(message = "Confirm password is required")

@@ -8,6 +8,15 @@ export interface ServiceItem {
   price?: number;
 }
 
+export interface ServiceResponseDTO {
+  id: number;
+  serviceName: string;
+  description?: string;
+  basePrice?: number;
+  estimatedDurationMinutes?: number;
+  category?: string;
+}
+
 export interface AdminServiceDTO {
   serviceName: string;
   serviceType?: string;
@@ -16,8 +25,8 @@ export interface AdminServiceDTO {
 }
 
 // Public/admin view list of services
-export const listAllServices = async (): Promise<ServiceItem[]> => {
-  const res = await api.get<ServiceItem[]>("/service/view/all");
+export const listAllServices = async (): Promise<ServiceResponseDTO[]> => {
+  const res = await api.get<ServiceResponseDTO[]>("/service/view/all");
   return res.data;
 };
 

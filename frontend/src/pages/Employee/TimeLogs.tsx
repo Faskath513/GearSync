@@ -14,7 +14,7 @@ const TimeLogs: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        "http://localhost:8080/api/employee/timelogs",
+        "http://localhost:8082/api/employee/timelogs",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

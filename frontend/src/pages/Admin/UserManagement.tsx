@@ -54,7 +54,7 @@ const UserManagement: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:8080/api/users", {
+      const response = await axios.get("http://localhost:8082/api/users", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -124,7 +124,7 @@ const UserManagement: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:8080/api/auth/register",
+        "http://localhost:8082/api/auth/register",
         formData,
         {
           headers: {

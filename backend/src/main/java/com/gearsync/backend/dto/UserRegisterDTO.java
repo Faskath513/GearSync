@@ -14,10 +14,7 @@ public class UserRegisterDTO {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
-            message = "Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character"
-    )
+    @Size(min = 5, message = "Password must be at least 5 characters")
     private String password;
 
     private String firstName;
@@ -26,7 +23,7 @@ public class UserRegisterDTO {
 
     private String phoneNumber;
 
-    @Pattern(regexp = "CUSTOMER", message = "Role must be CUSTOMER")
+    // Role is optional - defaults to CUSTOMER in service if not provided
     private String role;
 
 }
