@@ -9,7 +9,6 @@ import com.gearsync.backend.repository.UserRepository;
 import com.gearsync.backend.service.AdminServices;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,7 +23,6 @@ public class AdminController {
 
     public final AdminServices adminServices;
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
 
     @PostMapping("/employees")
     public ResponseEntity<?> addEmployee(@Valid @RequestBody EmployeeRegisterDTO employeeRegisterDTO) {
@@ -62,8 +60,8 @@ public class AdminController {
                         dto.setId(user.getId()); 
                         dto.setName(user.getFirstName() + " " + user.getLastName());
                         dto.setEmail(user.getEmail());
-                        dto.setFirstName(user.getFirstName());
                         dto.setLastName(user.getLastName());
+                        dto.setFirstName(user.getFirstName());
                         dto.setPhoneNumber(user.getPhoneNumber());
                         dto.setRole(user.getRole().name());
                         dto.setIsActive(user.getIsActive());
@@ -404,11 +402,6 @@ public class AdminController {
             return ResponseEntity.ok(employees);
         } catch (UnauthorizedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-    @GetMapping("/appointments")
-    public ResponseEntity<?> getAllAppointments() {
-        try {
-            List<AppointmentResponseDTO> list = adminServices.getAllAppointments();
-            return ResponseEntity.ok(list);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
