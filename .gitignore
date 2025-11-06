@@ -1,10 +1,11 @@
 /backend/target
 /frontend/node_modules
 .DS_Store
-.env
 .application-dev.yml
 backend/.idea
 .idea
 /.vscode
 package-lock.json
 
+config.bat
+node_modules
