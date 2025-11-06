@@ -8,33 +8,28 @@ import com.gearsync.backend.model.*;
 import com.gearsync.backend.repository.AppointmentRepository;
 import com.gearsync.backend.repository.ProjectRepository;
 import com.gearsync.backend.repository.UserRepository;
+import com.gearsync.backend.repository.VehicleRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import jakarta.transaction.Transactional;
-
 import java.math.BigDecimal;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class AdminServices {
 
-    private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
-    private static final String DIGITS = "0123456789";
-    private static final String SPECIALS = "!@#$%^&*()-_=+[]{}|;:,.<>?";
-    private static final String ALL = UPPERCASE + LOWERCASE + DIGITS + SPECIALS;
-    private static final SecureRandom random = new SecureRandom();
+//    private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+//    private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+//    private static final String DIGITS = "0123456789";
+//    private static final String SPECIALS = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+//    private static final String ALL = UPPERCASE + LOWERCASE + DIGITS + SPECIALS;
+//    private static final SecureRandom random = new SecureRandom();
 
 
     private final ModelMapper modelMapper;
@@ -44,6 +39,7 @@ public class AdminServices {
     private final PasswordManagementService passwordManagementService;
     private final AppointmentRepository appointmentRepository;
     private final ProjectRepository projectRepository;
+    private final VehicleRepository vehicleRepository;
 
 
     @Transactional
@@ -58,7 +54,7 @@ public class AdminServices {
             user.setIsFirstLogin(true);
             User savedUser = userRepository.save(user);
             String username = savedUser.getFirstName() + " " + savedUser.getLastName();
-            emailService.sendEmployeeWelcomeEmail(savedUser.getEmail(),username,generatedPassword,"Employee");
+            emailService.sendEmployeeWelcomeEmail(savedUser.getEmail(), username, generatedPassword, "Employee");
             Map<String, Object> response = new HashMap<>();
             response.put("user-email", savedUser.getEmail());
             response.put("message", "Employee added successfully");
@@ -67,6 +63,7 @@ public class AdminServices {
             throw new DuplicateResourceException("User with email " + employeeRegisterDTO.getEmail() + " already exists.");
         }
     }
+
     @Transactional
     public Map<String, Object> addAdmin(AdminRegisterDTO adminRegisterDTO) {
         try {
@@ -79,7 +76,7 @@ public class AdminServices {
             user.setIsFirstLogin(true);
             User savedUser = userRepository.save(user);
             String username = savedUser.getFirstName() + savedUser.getLastName();
-            emailService.sendEmployeeWelcomeEmail(savedUser.getEmail(),username,generatedPassword,"Admin");
+            emailService.sendEmployeeWelcomeEmail(savedUser.getEmail(), username, generatedPassword, "Admin");
             Map<String, Object> response = new HashMap<>();
             response.put("user-email", savedUser.getEmail());
             response.put("message", "Admin added successfully");
@@ -145,9 +142,14 @@ public class AdminServices {
                     existingNotes.isEmpty() ? note : existingNotes + "\n" + note
             );
         }
-
         Appointment updated = appointmentRepository.save(appointment);
-
+        String customerEmail = appointment.getCustomer().getEmail();
+        String vehicleRegistrationNumber = appointment.getVehicle().getRegistrationNumber();
+        String customerName = appointment.getCustomer().getFirstName() + " " + appointment.getCustomer().getLastName();
+        BigDecimal finalCost = appointment.getFinalCost() != null ?
+                appointment.getFinalCost() : BigDecimal.ZERO;
+        LocalDateTime scheduledDateTime = appointment.getScheduledDateTime();
+        emailService.sendCustomerAppointmentConfirmation(customerEmail,vehicleRegistrationNumber,customerName,scheduledDateTime,finalCost);
         List<Services> services = new ArrayList<>(appointment.getAppointmentServices());
         return convertAppointmentToResponseDTO(updated, services);
     }
@@ -509,6 +511,7 @@ public class AdminServices {
                     ". Valid statuses: SCHEDULED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW, RESCHEDULED");
         }
     }
+
     @Transactional
     public List<ProjectSummaryDTO> getAllProjects(String adminEmail) {
 
@@ -735,21 +738,114 @@ public class AdminServices {
         return dto;
     }
 
-@Transactional
-public List<AppointmentResponseDTO> getAllAppointments() {
-    // uses the fetch-joined repo query you added earlier
-    List<Appointment> all = appointmentRepository.findAllWithDetails();
+    @Transactional
+    public List<AppointmentResponseDTO> getAllAppointments() {
+        List<Appointment> all = appointmentRepository.findAllWithDetails();
 
-    return all.stream()
-        .map(a -> {
-            // Safely collect services from the entity’s actual field name
-            List<Services> services = new ArrayList<>();
-            Set<Services> svcSet = a.getAppointmentServices(); // <-- your real accessor
-            if (svcSet != null && !svcSet.isEmpty()) {
-                services = new ArrayList<>(svcSet);
-            }
-            return convertAppointmentToResponseDTO(a, services);
-        })
-        .collect(Collectors.toList());
-}
+        return all.stream()
+                .map(a -> {
+                    List<Services> services = new ArrayList<>();
+                    Set<Services> svcSet = a.getAppointmentServices();
+                    if (svcSet != null && !svcSet.isEmpty()) {
+                        services = new ArrayList<>(svcSet);
+                    }
+                    return convertAppointmentToResponseDTO(a, services);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<VehicleSummaryDTO> getAllVehicles(String adminEmail) {
+
+        validateAdmin(adminEmail);
+
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+
+        return vehicles.stream()
+                .map(this::convertToVehicleSummary)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<CustomerWithVehiclesDTO> getAllCustomersWithVehicles(String adminEmail) {
+
+        validateAdmin(adminEmail);
+
+        List<User> customers = userRepository.findByRole(Role.CUSTOMER);
+
+        return customers.stream()
+                .map(this::convertToCustomerWithVehicles)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public CustomerWithVehiclesDTO getCustomerWithVehicles(String adminEmail, Long customerId) {
+
+        validateAdmin(adminEmail);
+
+        User customer = userRepository.findById(customerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with ID: " + customerId));
+
+        if (customer.getRole() != Role.CUSTOMER) {
+            throw new IllegalArgumentException("User is not a customer");
+        }
+
+        return convertToCustomerWithVehicles(customer);
+    }
+
+    private VehicleSummaryDTO convertToVehicleSummary(Vehicle vehicle) {
+        VehicleSummaryDTO dto = new VehicleSummaryDTO();
+        dto.setId(vehicle.getId());
+        dto.setRegistrationNumber(vehicle.getRegistrationNumber());
+        dto.setMake(vehicle.getMake());
+        dto.setModel(vehicle.getModel());
+        dto.setYear(vehicle.getYear());
+        dto.setColor(vehicle.getColor());
+        dto.setVinNumber(vehicle.getVinNumber());
+        dto.setMileage(vehicle.getMileage());
+
+        User owner = vehicle.getOwner();
+        dto.setOwnerName(owner.getFirstName() + " " + owner.getLastName());
+        dto.setOwnerEmail(owner.getEmail());
+        dto.setOwnerPhone(owner.getPhoneNumber());
+        dto.setCreatedAt(vehicle.getCreatedAt());
+
+        return dto;
+    }
+
+    private CustomerWithVehiclesDTO convertToCustomerWithVehicles(User customer) {
+        CustomerWithVehiclesDTO dto = new CustomerWithVehiclesDTO();
+        dto.setId(customer.getId());
+        dto.setEmail(customer.getEmail());
+        dto.setFirstName(customer.getFirstName());
+        dto.setLastName(customer.getLastName());
+        dto.setPhoneNumber(customer.getPhoneNumber());
+        dto.setIsActive(customer.getIsActive());
+        dto.setCreatedAt(customer.getCreatedAt());
+
+        List<Vehicle> vehicles = vehicleRepository.findByOwnerId(customer.getId());
+        List<VehicleInfoDTO> vehicleInfos = vehicles.stream()
+                .map(vehicle -> {
+                    VehicleInfoDTO vDto = new VehicleInfoDTO();
+                    vDto.setId(vehicle.getId());
+                    vDto.setRegistrationNumber(vehicle.getRegistrationNumber());
+                    vDto.setMake(vehicle.getMake());
+                    vDto.setModel(vehicle.getModel());
+                    vDto.setYear(vehicle.getYear());
+                    vDto.setColor(vehicle.getColor());
+                    return vDto;
+                })
+                .collect(Collectors.toList());
+
+        dto.setVehicles(vehicleInfos);
+        dto.setTotalVehicles(vehicles.size());
+
+        List<Appointment> appointments = appointmentRepository.findByCustomerId(customer.getId());
+        List<Project> projects = projectRepository.findByCustomerId(customer.getId());
+
+        dto.setTotalAppointments(appointments.size());
+        dto.setTotalProjects(projects.size());
+
+        return dto;
+    }
 }

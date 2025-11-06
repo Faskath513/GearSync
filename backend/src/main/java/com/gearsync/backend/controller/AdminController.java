@@ -406,4 +406,54 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
+
+    @GetMapping("/vehicles")
+    public ResponseEntity<?> getAllVehicles(Authentication authentication) {
+        try {
+            List<VehicleSummaryDTO> vehicles = adminServices.getAllVehicles(
+                    authentication.getName()
+            );
+            return ResponseEntity.ok(vehicles);
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/customers")
+    public ResponseEntity<?> getAllCustomersWithVehicles(Authentication authentication) {
+        try {
+            List<CustomerWithVehiclesDTO> customers = adminServices.getAllCustomersWithVehicles(
+                    authentication.getName()
+            );
+            return ResponseEntity.ok(customers);
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/customers/{id}")
+    public ResponseEntity<?> getCustomerWithVehicles(
+            Authentication authentication,
+            @PathVariable Long id) {
+        try {
+            CustomerWithVehiclesDTO customer = adminServices.getCustomerWithVehicles(
+                    authentication.getName(),
+                    id
+            );
+            return ResponseEntity.ok(customer);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (UnauthorizedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
 }
