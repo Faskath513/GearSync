@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -72,4 +73,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
             "AND a.status IN ('SCHEDULED', 'CONFIRMED', 'IN_PROGRESS')")
     long countActiveAppointmentsByCustomer(@Param("customerId") Long customerId);
 
+    long countByStatus(AppointmentStatus status);
+
+    List<Appointment> findByStatusOrderByScheduledDateTimeAsc(AppointmentStatus status);
+
+    List<Appointment> findByScheduledDateTimeBetweenOrderByScheduledDateTimeAsc(LocalDateTime start, LocalDateTime end);
+
+    @Query("""
+           select coalesce(sum(a.finalCost), 0)
+           from Appointment a
+           where a.status = :status
+           """)
+    BigDecimal sumFinalCostByStatus(AppointmentStatus status);
 }

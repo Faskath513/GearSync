@@ -48,6 +48,29 @@ export const listEmployees = async (): Promise<UserDto[]> => {
   return data;
 };
 
+// User Management
+export interface UpdateUserDTO {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  isActive?: boolean;
+}
+
+export const updateUser = async (userId: number, payload: UpdateUserDTO): Promise<User> => {
+  const { data } = await api.put<User>(`/admin/users/${userId}`, payload);
+  return data;
+};
+
+export const deleteUser = async (userId: number): Promise<void> => {
+  await api.delete(`/admin/users/${userId}`);
+};
+
+export const toggleUserStatus = async (userId: number, isActive: boolean): Promise<User> => {
+  const { data } = await api.put<User>(`/admin/users/${userId}/status`, { isActive });
+  return data;
+};
+
 // ----- Appointments
 export interface AssignAppointmentDTO { employeeId: number; }
 

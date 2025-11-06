@@ -12,8 +12,14 @@ import {
   Phone,
   Calendar,
   X,
+  Loader,
 } from "lucide-react";
-import axios from "axios";
+import { 
+  addAdmin,
+  addEmployee,
+  listEmployees,
+} from "../../api/admin";
+import useApi from "../../hooks/useApi";
 
 interface User {
   id: number;
@@ -35,106 +41,191 @@ interface UserFormData {
   role: "CUSTOMER" | "EMPLOYEE" | "ADMIN";
 }
 
-const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+const UserForm: React.FC<{
+  initialData?: Partial<UserFormData>;
+  onSubmit: (data: UserFormData) => Promise<void>;
+  onCancel: () => void;
+  isSubmitting: boolean;
+  error: string | null;
+  mode: 'create' | 'edit';
+}> = ({ initialData, onSubmit, onCancel, isSubmitting, error, mode }) => {
+  const [formData, setFormData] = useState<UserFormData>({
+    email: initialData?.email || '',
+    password: '',
+    firstName: initialData?.firstName || '',
+    lastName: initialData?.lastName || '',
+    phoneNumber: initialData?.phoneNumber || '',
+    role: initialData?.role || 'EMPLOYEE',
+  });
 
-  // Fetch users
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:8082/api/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUsers(response.data);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    } finally {
-      setLoading(false);
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await onSubmit(formData);
   };
 
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">First Name</label>
+          <input
+            type="text"
+            value={formData.firstName}
+            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Last Name</label>
+          <input
+            type="text"
+            value={formData.lastName}
+            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Email</label>
+        <input
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        />
+      </div>
+      {mode === 'create' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Password</label>
+          <input
+            type="password"
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          />
+        </div>
+      )}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+        <input
+          type="tel"
+          value={formData.phoneNumber}
+          onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Role</label>
+        <select
+          value={formData.role}
+          onChange={(e) => setFormData({ ...formData, role: e.target.value as UserFormData['role'] })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          required
+        >
+          <option value="EMPLOYEE">Employee</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+      {error && (
+        <div className="text-red-600 text-sm">{error}</div>
+      )}
+      <div className="flex justify-end space-x-3">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+          disabled={isSubmitting}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <div className="flex items-center">
+              <Loader className="w-4 h-4 mr-2 animate-spin" />
+              {mode === 'create' ? 'Creating...' : 'Updating...'}
+            </div>
+          ) : (
+            mode === 'create' ? 'Create User' : 'Update User'
+          )}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+const UserManagement: React.FC = () => {
+  // The backend `GET /api/admin/employees` returns a simplified UserDto with `name`, `email`, `role`, `phoneNumber`.
+  const { data: users, loading, error, refetch } = useApi(() => listEmployees(), []);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [showAddModal, setShowAddModal] = useState(false);
+
   // Filter users
-  const filteredUsers = users.filter((user) => {
+  // Filter users using the DTO fields (name, email, role)
+  const filteredUsers = (users || []).filter((user: any) => {
     const matchesSearch =
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.email || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
-    const matchesStatus =
-      statusFilter === "ALL" ||
-      (statusFilter === "ACTIVE" && user.isActive) ||
-      (statusFilter === "INACTIVE" && !user.isActive);
+    const matchesRole = roleFilter === "ALL" || (user.role || "").toUpperCase() === roleFilter;
 
-    return matchesSearch && matchesRole && matchesStatus;
+    return matchesSearch && matchesRole;
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Toggle user status
   const toggleUserStatus = async (userId: number) => {
-    try {
-      const user = users.find((u) => u.id === userId);
-      if (!user) return;
-
-      // TODO: Implement backend API for updating user status
-      // For now, just update locally
-      setUsers(
-        users.map((u) =>
-          u.id === userId ? { ...u, isActive: !u.isActive } : u
-        )
-      );
-    } catch (error) {
-      console.error("Error toggling user status:", error);
-    }
+    // Not supported by backend; show info to admin.
+    alert("Activate/Deactivate is not supported by the current backend API.");
   };
 
   // Delete user
   const deleteUser = async (userId: number) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
-
-    try {
-      // TODO: Implement backend API for deleting user
-      setUsers(users.filter((u) => u.id !== userId));
-    } catch (error) {
-      console.error("Error deleting user:", error);
-    }
+    alert("Delete user is not supported by the current backend API.");
   };
 
   // Edit user
   const handleEdit = (user: User) => {
-    setSelectedUser(user);
-    setShowEditModal(true);
+    alert("Edit/update is not supported by the current backend API.");
   };
 
   // Add new user
   const handleAddUser = async (formData: UserFormData) => {
+    setIsSubmitting(true);
+    setFormError(null);
+
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "http://localhost:8082/api/auth/register",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      if (formData.role === 'ADMIN') {
+        await addAdmin({
+          email: formData.email,
+          password: formData.password || '',
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phoneNumber: formData.phoneNumber
+        });
+      } else if (formData.role === 'EMPLOYEE') {
+        await addEmployee({
+          email: formData.email,
+          password: formData.password || '',
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phoneNumber: formData.phoneNumber
+        });
+      }
       
       // Refresh user list
-      await fetchUsers();
+      await refetch();
       setShowAddModal(false);
       alert("User added successfully!");
     } catch (error: any) {
@@ -145,34 +236,8 @@ const UserManagement: React.FC = () => {
 
   // Update existing user
   const handleUpdateUser = async (formData: UserFormData) => {
-    if (!selectedUser) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      // TODO: Implement backend API for updating user
-      // For now, just update locally
-      setUsers(
-        users.map((u) =>
-          u.id === selectedUser.id
-            ? {
-                ...u,
-                email: formData.email,
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                phoneNumber: formData.phoneNumber,
-                role: formData.role,
-              }
-            : u
-        )
-      );
-      
-      setShowEditModal(false);
-      setSelectedUser(null);
-      alert("User updated successfully!");
-    } catch (error) {
-      console.error("Error updating user:", error);
-      alert("Failed to update user");
-    }
+    // backend doesn't expose update endpoint; inform admin
+    alert("Updating users is not supported by the backend API.");
   };
 
   // Role badge color
@@ -210,11 +275,11 @@ const UserManagement: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+  <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{users?.length || 0}</p>
             </div>
             <Users className="w-10 h-10 text-blue-500" />
           </div>
@@ -225,7 +290,7 @@ const UserManagement: React.FC = () => {
             <div>
               <p className="text-gray-600 text-sm">Customers</p>
               <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.role === "CUSTOMER").length}
+                {users?.filter((u) => u.role === "CUSTOMER").length || 0}
               </p>
             </div>
             <UserCheck className="w-10 h-10 text-green-500" />
@@ -237,7 +302,7 @@ const UserManagement: React.FC = () => {
             <div>
               <p className="text-gray-600 text-sm">Employees</p>
               <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.role === "EMPLOYEE").length}
+                {users?.filter((u) => u.role === "EMPLOYEE").length || 0}
               </p>
             </div>
             <UserCheck className="w-10 h-10 text-purple-500" />
@@ -247,9 +312,9 @@ const UserManagement: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Active Users</p>
+              <p className="text-gray-600 text-sm">Admins</p>
               <p className="text-2xl font-bold text-gray-900">
-                {users.filter((u) => u.isActive).length}
+                {users?.filter((u) => (u.role || '').toUpperCase() === 'ADMIN').length || 0}
               </p>
             </div>
             <UserCheck className="w-10 h-10 text-emerald-500" />
@@ -288,24 +353,16 @@ const UserManagement: React.FC = () => {
             </select>
           </div>
 
-          {/* Status Filter */}
-          <div className="md:w-48">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="ALL">All Status</option>
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-          </div>
         </div>
       </div>
 
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
+        {error ? (
+          <div className="p-12 text-center text-red-600">
+            Error loading users: {error.message}
+          </div>
+        ) : loading ? (
           <div className="p-12 text-center">
             <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="mt-4 text-gray-600">Loading users...</p>
@@ -329,29 +386,27 @@ const UserManagement: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Joined
-                  </th>
+                  {/* Status and Joined columns removed - backend returns simplified DTO */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user: any) => (
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                          {user.firstName.charAt(0)}
-                          {user.lastName.charAt(0)}
+                          {(() => {
+                            const fullName = `${user.firstName} ${user.lastName}`;
+                            const parts = fullName.split(' ').filter(Boolean);
+                            return (parts[0]?.charAt(0) || '') + (parts[1]?.charAt(0) || '');
+                          })()}
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
+                            {user.name || `${user.firstName || ''} ${user.lastName || ''}`}
                           </div>
                           <div className="text-sm text-gray-500 flex items-center gap-1">
                             <Mail className="w-3 h-3" />
@@ -375,46 +430,14 @@ const UserManagement: React.FC = () => {
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {user.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </div>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleEdit(user)}
+                          onClick={() => handleEdit(user as any)}
                           className="text-blue-600 hover:text-blue-900"
                           title="Edit"
                         >
                           <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => toggleUserStatus(user.id)}
-                          className={`${
-                            user.isActive
-                              ? "text-orange-600 hover:text-orange-900"
-                              : "text-green-600 hover:text-green-900"
-                          }`}
-                          title={user.isActive ? "Deactivate" : "Activate"}
-                        >
-                          {user.isActive ? (
-                            <UserX className="w-5 h-5" />
-                          ) : (
-                            <UserCheck className="w-5 h-5" />
-                          )}
                         </button>
                         <button
                           onClick={() => deleteUser(user.id)}
@@ -438,7 +461,7 @@ const UserManagement: React.FC = () => {
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-700">
             Showing <span className="font-medium">{filteredUsers.length}</span>{" "}
-            of <span className="font-medium">{users.length}</span> users
+            of <span className="font-medium">{users?.length || 0}</span> users
           </p>
           <div className="flex gap-2">
             <button className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
@@ -459,260 +482,27 @@ const UserManagement: React.FC = () => {
 
       {/* Add User Modal */}
       {showAddModal && (
-        <UserFormModal
-          title="Add New User"
-          onClose={() => setShowAddModal(false)}
-          onSubmit={handleAddUser}
-          isEditMode={false}
-        />
-      )}
-
-      {/* Edit User Modal */}
-      {showEditModal && selectedUser && (
-        <UserFormModal
-          title="Edit User"
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedUser(null);
-          }}
-          onSubmit={handleUpdateUser}
-          isEditMode={true}
-          initialData={selectedUser}
-        />
-      )}
-    </div>
-  );
-};
-
-// User Form Modal Component
-interface UserFormModalProps {
-  title: string;
-  onClose: () => void;
-  onSubmit: (data: UserFormData) => void;
-  isEditMode: boolean;
-  initialData?: User;
-}
-
-const UserFormModal: React.FC<UserFormModalProps> = ({
-  title,
-  onClose,
-  onSubmit,
-  isEditMode,
-  initialData,
-}) => {
-  const [formData, setFormData] = useState<UserFormData>({
-    email: initialData?.email || "",
-    password: "",
-    firstName: initialData?.firstName || "",
-    lastName: initialData?.lastName || "",
-    phoneNumber: initialData?.phoneNumber || "",
-    role: initialData?.role || "CUSTOMER",
-  });
-
-  const [errors, setErrors] = useState<Partial<UserFormData>>({});
-
-  const validateForm = () => {
-    const newErrors: Partial<UserFormData> = {};
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    if (!isEditMode && !formData.password) {
-      newErrors.password = "Password is required";
-    } else if (!isEditMode && formData.password && formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-
-    if (!formData.firstName) {
-      newErrors.firstName = "First name is required";
-    }
-
-    if (!formData.lastName) {
-      newErrors.lastName = "Last name is required";
-    }
-
-    if (!formData.phoneNumber) {
-      newErrors.phoneNumber = "Phone number is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSubmit(formData);
-    }
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for this field
-    if (errors[name as keyof UserFormData]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.email ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="john@example.com"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-            )}
-          </div>
-
-          {/* Password (only for add mode) */}
-          {!isEditMode && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.password ? "border-red-500" : "border-gray-300"
-                }`}
-                placeholder="Enter password"
-              />
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-              )}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-semibold">Add New User</h2>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-500">
+                <X className="w-6 h-6" />
+              </button>
             </div>
-          )}
-
-          {/* First Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              First Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.firstName ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="John"
-            />
-            {errors.firstName && (
-              <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
-            )}
+            <div className="p-6">
+              <UserForm
+                mode="create"
+                onSubmit={handleAddUser}
+                onCancel={() => setShowAddModal(false)}
+                isSubmitting={isSubmitting}
+                error={formError}
+              />
+            </div>
           </div>
+        </div>
+      )}
 
-          {/* Last Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Last Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.lastName ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="Doe"
-            />
-            {errors.lastName && (
-              <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
-            )}
-          </div>
-
-          {/* Phone Number */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                errors.phoneNumber ? "border-red-500" : "border-gray-300"
-              }`}
-              placeholder="1234567890"
-            />
-            {errors.phoneNumber && (
-              <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
-            )}
-          </div>
-
-          {/* Role */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Role <span className="text-red-500">*</span>
-            </label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="CUSTOMER">Customer</option>
-              <option value="EMPLOYEE">Employee</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {isEditMode ? "Update" : "Add"} User
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 };
