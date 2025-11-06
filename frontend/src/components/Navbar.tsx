@@ -153,13 +153,7 @@ const Navbar: React.FC<NavbarProps> = ({ theme = "cyanIndigo" }) => {
       {open && (
         <div className="md:hidden bg-slate-900/95 backdrop-blur border-top border-white/10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 space-y-1">
-            <Link
-              to="/service"
-              className="block rounded-lg px-3 py-2 hover:bg-white/10"
-              onClick={() => setOpen(false)}
-            >
-              Services
-            </Link>
+            <Link to="/services" className={isActive("/services")}>Services</Link>
             <Link
               to="/about"
               className="block rounded-lg px-3 py-2 hover:bg-white/10"

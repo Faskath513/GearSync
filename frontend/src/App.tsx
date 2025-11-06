@@ -11,6 +11,7 @@ import ForgotPassword from "./components/auth/ForgotPassword";
 import VerifyOtp from "./components/auth/VerifyOtp";
 import ResetPassword from "./components/auth/ResetPassword";
 import ChangePassword from "./components/auth/ChangePassword";
+import Service from "./pages/Services";
 
 // Admin Pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -75,6 +76,7 @@ const App: React.FC = () => {
           <Route path="/verify-otp" element={<VerifyOtp />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/service" element={<Service />} />
           {/* Admin Routes with Layout */}
           <Route
             path="/admin-dashboard"
