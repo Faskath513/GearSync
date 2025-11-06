@@ -49,7 +49,6 @@ public class AdminDashboardController {
         }
     }
 
-    // 1) Total Earnings for COMPLETED
     @GetMapping("/earnings/total")
     public ResponseEntity<?> totalEarnings() {
         try {
@@ -60,7 +59,6 @@ public class AdminDashboardController {
         }
     }
 
-    // 2) Active service count (IN_PROGRESS)
     @GetMapping("/services/active/count")
     public ResponseEntity<?> activeServiceCount() {
         try {
@@ -71,7 +69,6 @@ public class AdminDashboardController {
         }
     }
 
-    // 3) List of appointments with status CONFIRMED
     @GetMapping("/appointments/confirmed")
     public ResponseEntity<?> confirmedAppointments() {
         try {
@@ -82,7 +79,6 @@ public class AdminDashboardController {
         }
     }
 
-    // 4) List of appointments scheduled today (by scheduledDateTime date)
     @GetMapping("/appointments/today")
     public ResponseEntity<?> todayAppointments() {
         try {
