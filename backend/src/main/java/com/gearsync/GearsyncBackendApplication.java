@@ -10,7 +10,9 @@ public class GearsyncBackendApplication {
 
         Dotenv dotenv = Dotenv.load();
 
-        System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
+        dotenv.entries().forEach(entry ->
+                System.setProperty(entry.getKey(), entry.getValue())
+        );
 
         SpringApplication.run(GearsyncBackendApplication.class, args);
     }
