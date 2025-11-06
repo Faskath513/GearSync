@@ -1,21 +1,20 @@
 package com.gearsync.backend.controller;
+
 import com.gearsync.backend.dto.*;
 import com.gearsync.backend.exception.ResourceNotFoundException;
 import com.gearsync.backend.model.User;
 import com.gearsync.backend.repository.UserRepository;
 import com.gearsync.backend.security.JwtUtil;
 import com.gearsync.backend.service.AuthService;
-import java.util.Map;
-
 import com.gearsync.backend.service.PasswordManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -45,16 +44,16 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-    boolean isAuthenticated = authService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
-    if (!isAuthenticated) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
-    }
-    User user = authService.findByEmail(loginRequest.getEmail());
-    user.setLastLoginAt(java.time.LocalDateTime.now());
-    userRepository.save(user);
-    String jwtToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
-    return ResponseEntity.ok(Map.of(
-            "isFirstLogin", user.getIsFirstLogin(),
+        boolean isAuthenticated = authService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+        if (!isAuthenticated) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+        }
+        User user = authService.findByEmail(loginRequest.getEmail());
+        user.setLastLoginAt(java.time.LocalDateTime.now());
+        userRepository.save(user);
+        String jwtToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
+        return ResponseEntity.ok(Map.of(
+                "isFirstLogin", user.getIsFirstLogin(),
                 "token", jwtToken,
                 "role", user.getRole().name()
         ));
@@ -92,39 +91,40 @@ public class AuthController {
     public ResponseEntity<?> changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequestDTO request) {
-        
-        try{
+
+        try {
             passwordService.changePassword(authentication.getName(), request);
-        return ResponseEntity.ok(Map.of(
-                "message", "Password changed successfully",
-                "success", true
-        ));
+            return ResponseEntity.ok(Map.of(
+                    "message", "Password changed successfully",
+                    "success", true
+            ));
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
                     "message", e.getMessage(),
                     "success", false
             ));
-        }catch (Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "message", "An error occurred while changing the password",
                     "success", false
             ));
         }
-        
+
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequestDTO request) {
-        
-        try{
-                    passwordService.initiateForgotPassword(request);
-        return ResponseEntity.ok(Map.of(
-                "message", "OTP has been sent to your email. Valid for 10 minutes.",
-                "success", true,
-                "email", request.getEmail()
-        ));
-        }catch (ResourceNotFoundException e) {
+
+        try {
+            passwordService.initiateForgotPassword(request);
+            return ResponseEntity.ok(Map.of(
+                    "message", "OTP has been sent to your email. Valid for 10 minutes.",
+                    "success", true,
+                    "email", request.getEmail()
+            ));
+        } catch (ResourceNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
                     "message", e.getMessage(),
                     "success", false
