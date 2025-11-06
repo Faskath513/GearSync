@@ -29,7 +29,13 @@ const ChangePassword: React.FC = () => {
   }, [auth.token, navigate]);
 
   const validate = () => {
-    if (!oldPassword) return "Current password is required.";
+    // Old password is always required (backend requirement)
+    if (!oldPassword) {
+      return auth.isFirstLogin 
+        ? "Temporary password is required." 
+        : "Current password is required.";
+    }
+    
     if (!newPassword) return "New password is required.";
     if (newPassword.length < 8) {
       return "Password must be at least 8 characters.";
@@ -46,9 +52,14 @@ const ChangePassword: React.FC = () => {
     if (!/(?=.*[@$!%*?&])/.test(newPassword)) {
       return "Password must contain at least one special character (@$!%*?&).";
     }
+    
+    // Check if new password is different from old password
     if (oldPassword === newPassword) {
-      return "New password must be different from current password.";
+      return auth.isFirstLogin
+        ? "New password must be different from your temporary password."
+        : "New password must be different from current password.";
     }
+    
     if (newPassword !== confirmPassword) {
       return "Passwords do not match.";
     }
@@ -74,11 +85,15 @@ const ChangePassword: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await changePassword({
+      
+      // Backend requires oldPassword, so we send it (temporary password for first login)
+      const changePasswordPayload = {
         oldPassword,
         newPassword,
         confirmPassword,
-      });
+      };
+      
+      const response = await changePassword(changePasswordPayload);
       if (response.success) {
         setSuccess(true);
         // Update isFirstLogin flag if it was first login
@@ -153,7 +168,7 @@ const ChangePassword: React.FC = () => {
               </h1>
               <p className="text-sm text-slate-400 mt-1">
                 {auth.isFirstLogin
-                  ? "This is your first login. Please set a new password to continue."
+                  ? "This is your first login. Please enter your temporary password and set a new password to continue."
                   : "Enter your current password and choose a new one. It must be at least 8 characters with uppercase, lowercase, number, and special character."}
               </p>
             </div>
@@ -185,34 +200,37 @@ const ChangePassword: React.FC = () => {
             )}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {!auth.isFirstLogin && (
-                <label className="text-sm text-slate-300">
-                  Current Password
-                  <div className="mt-1 relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                      <Lock className="w-4 h-4" />
-                    </span>
-                    <input
-                      type={showOldPw ? "text" : "password"}
-                      autoComplete="current-password"
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-3 pr-12 text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300"
-                      placeholder="Enter current password"
-                      required
-                      disabled={loading || success}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowOldPw((s) => !s)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md p-2 text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
-                      aria-label={showOldPw ? "Hide password" : "Show password"}
-                    >
-                      {showOldPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </label>
-              )}
+              <label className="text-sm text-slate-300">
+                {auth.isFirstLogin ? "Temporary Password" : "Current Password"}
+                <div className="mt-1 relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </span>
+                  <input
+                    type={showOldPw ? "text" : "password"}
+                    autoComplete={auth.isFirstLogin ? "new-password" : "current-password"}
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-10 py-3 pr-12 text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-300"
+                    placeholder={auth.isFirstLogin ? "Enter your temporary password" : "Enter current password"}
+                    required
+                    disabled={loading || success}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPw((s) => !s)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-md p-2 text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+                    aria-label={showOldPw ? "Hide password" : "Show password"}
+                  >
+                    {showOldPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {auth.isFirstLogin && (
+                  <p className="text-xs text-slate-400 mt-1">
+                    Enter the temporary password provided to you
+                  </p>
+                )}
+              </label>
 
               <label className="text-sm text-slate-300">
                 {auth.isFirstLogin ? "New Password" : "New Password"}
