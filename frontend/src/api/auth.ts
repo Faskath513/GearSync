@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8085/api";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8085/api";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -49,6 +49,30 @@ export const register = async (data: RegisterRequest) => {
 export const forgotPassword = async (email: string) => {
   const res = await api.post("/auth/forgot-password", { email });
   return res.data; // { message, resetToken }
+};
+
+// Profile/me
+export const fetchMe = async () => {
+  const res = await api.get("/auth/me");
+  return res.data;
+};
+
+// Change password for logged-in user
+export const changePassword = async (payload: { currentPassword: string; newPassword: string }) => {
+  const res = await api.post("/auth/change-password", payload);
+  return res.data;
+};
+
+// Update my profile
+export const updateMe = async (payload: { firstName?: string; lastName?: string; phoneNumber?: string }) => {
+  const res = await api.put("/users/me", payload);
+  return res.data;
+};
+
+// Delete my account
+export const deleteMe = async () => {
+  const res = await api.delete("/users/me");
+  return res.data;
 };
 
 export default api;
