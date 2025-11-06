@@ -7,6 +7,8 @@ A powerful AI-powered chatbot service built with FastAPI and Google AI Studio 2.
 - 🤖 **Google AI Studio 2.5 Flash Integration**: Powered by Gemini's latest model
 - 💬 **Conversational AI**: Context-aware responses with conversation history
 - 🚗 **Automotive-Focused**: Specialized for automotive service management
+- 🗄️ **Database Integration**: Real-time PostgreSQL database queries for services and appointments
+- 📅 **Appointment Availability**: Check available slots directly from database
 - 🔧 **RESTful API**: Clean, well-documented API endpoints
 - 🌐 **CORS Support**: Ready for frontend integration
 - 📊 **Health Monitoring**: Built-in health check endpoints
@@ -17,11 +19,17 @@ A powerful AI-powered chatbot service built with FastAPI and Google AI Studio 2.
 
 ### Core Chat Endpoints
 
-- `POST /chat` - Main chat endpoint with full conversation support
-- `POST /chat/simple` - Simplified chat for basic interactions
+- `POST /chat` - Main chat endpoint with full conversation support (includes database queries)
+- `POST /chat/simple` - Simplified chat for basic interactions (includes database queries)
 - `GET /health` - Health check endpoint
 - `GET /models` - List available AI models
 - `GET /` - Root endpoint with service info
+
+### Database Endpoints
+
+- `GET /services` - Get all available services from database
+- `GET /availability` - Get available appointment slots for a date
+- `GET /availability/check` - Check if a specific time slot is available
 
 ### Request/Response Models
 
@@ -86,13 +94,21 @@ Create a `.env` file in the chatbot-service directory:
 # Google AI Studio API Configuration
 GOOGLE_AI_API_KEY=your_actual_api_key_here
 
+# Database Configuration
+DATASOURCE_URL=jdbc:postgresql://localhost:5432/gear_sync?sslmode=disable
+DATASOURCE_USERNAME=postgres
+DATASOURCE_PASSWORD=your_database_password
+
 # Server Configuration
 HOST=0.0.0.0
 PORT=8000
 DEBUG=True
 ```
 
-**Important**: Replace `your_actual_api_key_here` with your actual Google AI Studio API key.
+**Important**: 
+- Replace `your_actual_api_key_here` with your actual Google AI Studio API key
+- Replace `your_database_password` with your PostgreSQL password
+- Ensure PostgreSQL is running and the `gear_sync` database exists
 
 ### 5. Running the Service
 

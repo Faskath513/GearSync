@@ -1,0 +1,26 @@
+package com.gearsync.backend.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ResetPasswordRequestDTO {
+
+    @NotBlank(message = "Reset token is required")
+    private String resetToken;
+
+    @NotBlank(message = "New password is required")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+            message = "Password must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number, and 1 special character"
+    )
+    private String newPassword;
+
+    @NotBlank(message = "Confirm password is required")
+    private String confirmPassword;
+}

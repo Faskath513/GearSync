@@ -28,44 +28,6 @@ const EmployeeDashboard: React.FC = () => {
         <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-pink-500 rounded-full opacity-10 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
 
-      {/* Sidebar */}
-      <aside className="w-64 bg-gradient-to-b from-purple-600 to-indigo-600 text-white flex flex-col shadow-2xl z-10">
-        <div className="p-6 text-2xl font-bold border-b border-purple-500">
-          Employee Panel
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <button
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-purple-500 transition-all"
-            onClick={() => navigate("/employee/tasks")}
-          >
-            <CheckSquare className="w-5 h-5" />
-            My Tasks
-          </button>
-          <button
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-purple-500 transition-all"
-            onClick={() => navigate("/employee/profile")}
-          >
-            <User className="w-5 h-5" />
-            My Profile
-          </button>
-          <button
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-purple-500 transition-all"
-            onClick={() => navigate("/employee/reports")}
-          >
-            <FileText className="w-5 h-5" />
-            Reports
-          </button>
-        </nav>
-        <div className="p-4 border-t border-purple-500">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </div>
-      </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-8 overflow-auto relative z-10">
