@@ -5,6 +5,9 @@
 .application-dev.yml
 backend/.idea
 .idea
+/backend/src/main/resources/application.properties
 /.vscode
 package-lock.json
+
+/Users/mohammedfaskath/Desktop/GearSync/chatbot-service/__pycache__
 

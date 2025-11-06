@@ -1,33 +1,65 @@
-import React, { useState } from "react";
-import { Car, Wrench, Calendar, Clock, Users, MessageCircle, CheckCircle, ArrowRight, Phone, Mail, MapPin } from "lucide-react";
-import LoginForm from "../components/auth/LoginForm";
-import RegisterForm from "../components/auth/RegisterForm";
-import ChatWidget from "../components/ChatWidget"; 
+import React from "react";
+import {
+  Car,
+  Wrench,
+  Calendar,
+  Clock,
+  MessageCircle,
+  CheckCircle,
+  ArrowRight,
+  Phone,
+  Mail,
+  MapPin,
+  Shield,
+  Star,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import ChatWidget from "../components/ChatWidget";
+
+/**
+ * Enhanced Home component
+ * - Refined color palette using cool darks with cyan/indigo accents
+ * - Better hierarchy, spacing, and readable contrasts
+ * - Accessible focus states, semantic landmarks, and ARIA labels
+ * - Subtle motion on scroll & hover for delight without distraction
+ * - Clear primary actions (Book Appointment / Chat with AI)
+ */
+
+const ACCENT_GRADIENT =
+  "bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400"; // primary accent sweep
+
+const cardClass =
+  "rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)]";
+
+const btnBase =
+  "inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-slate-950 transition";
 
 const Home: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('login');
-
   const features = [
     {
-      icon: <Calendar className="w-8 h-8" />,
+      icon: <Calendar className="w-7 h-7" />,
       title: "Easy Appointment Booking",
-      description: "Schedule your vehicle service with our convenient online booking system"
+      description:
+        "Schedule service in seconds with our streamlined online booking.",
     },
     {
-      icon: <Clock className="w-8 h-8" />,
-      title: "Real-Time Progress Tracking",
-      description: "Monitor your service progress live with instant updates and notifications"
+      icon: <Clock className="w-7 h-7" />,
+      title: "Real‑Time Progress Tracking",
+      description:
+        "Live status updates, ETA, and approvals right from your phone.",
     },
     {
-      icon: <Wrench className="w-8 h-8" />,
-      title: "Professional Service",
-      description: "Expert technicians with certified training and quality guaranteed work"
+      icon: <Wrench className="w-7 h-7" />,
+      title: "Certified Technicians",
+      description:
+        "Dealer‑level expertise with quality parts and guaranteed work.",
     },
     {
-      icon: <MessageCircle className="w-8 h-8" />,
+      icon: <MessageCircle className="w-7 h-7" />,
       title: "AI Assistant",
-      description: "Get instant help with our smart chatbot for appointment availability"
-    }
+      description:
+        "Instant answers about availability, pricing, and service prep.",
+    },
   ];
 
   const services = [
@@ -38,215 +70,282 @@ const Home: React.FC = () => {
     "AC System Maintenance",
     "Tire Rotation & Alignment",
     "Battery Testing & Replacement",
-    "Custom Modifications"
+    "Custom Modifications",
+  ];
+
+  const steps = [
+    {
+      title: "Book",
+      text: "Pick a time that works for you. We’ll confirm instantly.",
+    },
+    {
+      title: "Drop‑off / Pickup",
+      text: "Choose curbside, in‑shop, or pickup & delivery.",
+    },
+    {
+      title: "Track",
+      text: "Approve jobs, chat, and follow progress in real time.",
+    },
+    {
+      title: "Drive",
+      text: "Quality‑checked and ready. 90‑day workmanship guarantee.",
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-500 rounded-full opacity-15 animate-pulse" style={{animationDelay: '2s'}}></div>
-        <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-purple-500 rounded-full opacity-10 animate-pulse" style={{animationDelay: '4s'}}></div>
+    <div className="min-h-screen text-white relative overflow-hidden">
+      {/* Backdrop: layered gradient + radial highlights + subtle grid */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" />
+        <div
+          className="pointer-events-none absolute -top-40 left-1/2 h-[60rem] w-[60rem] -translate-x-1/2 rounded-full opacity-20 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(34,211,238,0.35), transparent 70%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute top-1/3 right-[-20%] h-[40rem] w-[40rem] rounded-full opacity-15 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(99,102,241,0.35), transparent 70%)",
+          }}
+        />
+        {/* subtle grid */}
+        <div
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
       </div>
 
-      {/* Navigation */}
-      <nav className="relative z-10 p-6">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-2 rounded-xl">
-              <Car className="w-8 h-8 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white">AutoService Pro</span>
-          </div>
-          <div className="hidden md:flex space-x-8 text-white">
-            <a href="#services" className="hover:text-blue-300 transition-colors">Services</a>
-            <a href="#about" className="hover:text-blue-300 transition-colors">About</a>
-            <a href="#contact" className="hover:text-blue-300 transition-colors">Contact</a>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="relative z-10 px-6 py-12">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          
-          {/* Left Side - Hero Content */}
-          <div className="text-white space-y-8">
-            <div className="space-y-6">
-              <h1 className="text-6xl font-extrabold leading-tight">
+      {/* Hero */}
+      <main className="relative z-10">
+        <section className="mx-auto max-w-7xl px-6 pt-14 md:pt-24 pb-10">
+          <div className="grid lg:grid-cols-12 gap-10 items-center">
+            <motion.div
+              className="lg:col-span-7"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+              <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
                 Your Vehicle's
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">
+                <span
+                  className={`block bg-clip-text text-transparent ${ACCENT_GRADIENT}`}
+                >
                   Service Partner
                 </span>
               </h1>
-              <p className="text-xl text-gray-300 max-w-lg leading-relaxed">
-                Professional automobile service management with real-time tracking, easy appointment booking, and expert technician support.
+              <p className="mt-5 max-w-2xl text-lg md:text-xl text-slate-300/90 leading-relaxed">
+                Professional service management with real‑time tracking, effortless
+                booking, and certified technicians—designed for speed and trust.
               </p>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <a
+                  href="#book"
+                  className={`${btnBase} ${ACCENT_GRADIENT} text-slate-950 shadow-lg shadow-cyan-500/20 hover:brightness-110`}
+                  aria-label="Book an appointment"
+                >
+                  <Calendar className="w-5 h-5" /> Book now
+                </a>
+                <a
+                  href="#chat"
+                  className={`${btnBase} bg-white/10 border border-white/10 hover:bg-white/15`}
+                  aria-label="Chat with AI assistant"
+                >
+                  <MessageCircle className="w-5 h-5" /> Chat with AI
+                </a>
+                <div className="flex items-center gap-2 text-sm text-slate-300/80 ml-1">
+                  <Shield className="w-4 h-4 text-emerald-400" /> 90‑day workmanship guarantee
+                </div>
+              </div>
+
+              {/* Trust bar */}
+              <div className="mt-8 flex flex-wrap items-center gap-6 text-slate-300/80">
+                <div className="flex items-center gap-2">
+                  <Star className="w-4 h-4 text-amber-300" /> 4.9/5 average rating
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" /> Genuine parts
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-cyan-300" /> Same‑day slots
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Highlight card */}
+            <motion.div
+              className="lg:col-span-5"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
+            >
+              <div className={`${cardClass} p-6 md:p-8 relative overflow-hidden`}>
+                <div className="absolute -right-8 -top-10 h-40 w-40 rounded-full bg-cyan-400/20 blur-2xl" />
+                <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-indigo-400/20 blur-2xl" />
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`p-2 rounded-xl ${ACCENT_GRADIENT} shadow-md shadow-cyan-500/10`}>
+                    <Wrench className="w-5 h-5 text-slate-950" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Quick quote, instant booking</h3>
+                </div>
+                <p className="text-slate-300/90">
+                  Tell us your vehicle & service needs. We’ll show transparent pricing and the earliest slot—usually within hours.
+                </p>
+
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  {features.map((f, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="text-cyan-300 mt-0.5">{f.icon}</div>
+                      <div>
+                        <p className="text-sm font-medium">{f.title}</p>
+                        <p className="text-xs text-slate-400">{f.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Stats */}
+        <section className="mx-auto max-w-7xl px-6 pb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+            {[
+              { value: "15K+", label: "Vehicles serviced" },
+              { value: "98%", label: "Customer satisfaction" },
+              { value: "24/7", label: "Support availability" },
+              { value: "50+", label: "Expert technicians" },
+            ].map((s, i) => (
+              <motion.div
+                key={i}
+                className={`${cardClass} p-5 text-center`}
+                whileHover={{ y: -2 }}
+                transition={{ type: "spring", stiffness: 250, damping: 20 }}
+              >
+                <div className="text-3xl md:text-4xl font-extrabold tracking-tight text-cyan-300">
+                  {s.value}
+                </div>
+                <div className="mt-1 text-slate-300/90 text-sm">{s.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Services */}
+        <section id="services" className="mx-auto max-w-7xl px-6 pt-8">
+          <div className="flex items-end justify-between gap-4 mb-6">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Our Services</h2>
+            <a href="#book" className="text-sm text-cyan-300 hover:text-cyan-200 inline-flex items-center gap-1">
+              View pricing <ArrowRight className="w-4 h-4" />
+            </a>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {services.map((service, i) => (
+              <motion.div
+                key={i}
+                className={`${cardClass} p-5"`}
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+              >
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5" />
+                  <p className="text-slate-200">{service}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* How it works */}
+        <section id="process" className="mx-auto max-w-7xl px-6 mt-16">
+          <div className={`${cardClass} p-6 md:p-8`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className={`p-2 rounded-xl ${ACCENT_GRADIENT} shadow-md shadow-cyan-500/10`}>
+                <Clock className="w-5 h-5 text-slate-950" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">How it works</h2>
             </div>
 
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 gap-6 mt-12">
-              {features.map((feature, index) => (
-                <div key={index} className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 hover:bg-white/20 transition-all duration-300">
-                  <div className="text-blue-400 mb-3">
-                    {feature.icon}
-                  </div>
-                  <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                  <p className="text-sm text-gray-300">{feature.description}</p>
+            <div className="grid md:grid-cols-4 gap-6">
+              {steps.map((s, i) => (
+                <div key={i} className="relative">
+                  <div className="absolute -top-4 -left-4 h-8 w-8 rounded-full bg-cyan-400/10 ring-1 ring-cyan-300/20" />
+                  <div className="text-sm uppercase tracking-wider text-slate-400">Step {i + 1}</div>
+                  <div className="mt-1 text-lg font-semibold">{s.title}</div>
+                  <p className="mt-1 text-slate-300/90 text-sm leading-relaxed">{s.text}</p>
                 </div>
               ))}
             </div>
-
-            {/* Services List */}
-            <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
-              <h3 className="text-2xl font-bold mb-4 flex items-center">
-                <Wrench className="w-6 h-6 mr-3 text-blue-400" />
-                Our Services
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {services.map((service, index) => (
-                  <div key={index} className="flex items-center space-x-2 text-gray-300">
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span className="text-sm">{service}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
+        </section>
 
-          {/* Right Side - Authentication Forms */}
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl">
-            {/* Tab Buttons */}
-            <div className="flex border-b border-white/20">
-              <button
-                onClick={() => setActiveTab('login')}
-                className={`flex-1 py-4 px-6 text-center font-semibold transition-all duration-300 ${
-                  activeTab === 'login' 
-                    ? 'text-white bg-blue-600/30 border-b-2 border-blue-400' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <Users className="w-5 h-5 inline-block mr-2" />
-                Sign In
-              </button>
-              <button
-                onClick={() => setActiveTab('register')}
-                className={`flex-1 py-4 px-6 text-center font-semibold transition-all duration-300 ${
-                  activeTab === 'register' 
-                    ? 'text-white bg-green-600/30 border-b-2 border-green-400' 
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
-              >
-                <ArrowRight className="w-5 h-5 inline-block mr-2" />
-                Register
-              </button>
-            </div>
-
-            {/* Form Content */}
-            <div className="p-8">
-              {activeTab === 'login' ? (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-                    <p className="text-gray-300">Sign in to track your vehicle's service progress</p>
-                  </div>
-                  <LoginForm />
-                  <div className="text-center">
-                    <a href="#" className="text-blue-400 hover:text-blue-300 text-sm hover:underline">
-                      Forgot your password?
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <h2 className="text-3xl font-bold text-white mb-2">Join AutoService Pro</h2>
-                    <p className="text-gray-300">Create your account to start managing your vehicle services</p>
-                  </div>
-                  <RegisterForm />
-                  <div className="text-center text-sm text-gray-400">
-                    By registering, you agree to our{' '}
-                    <a href="#" className="text-blue-400 hover:underline">Terms of Service</a>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Section */}
-        <div className="max-w-7xl mx-auto mt-24">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center text-white">
-              <div className="text-4xl font-bold text-blue-400 mb-2">15K+</div>
-              <div className="text-gray-300">Vehicles Serviced</div>
-            </div>
-            <div className="text-center text-white">
-              <div className="text-4xl font-bold text-green-400 mb-2">98%</div>
-              <div className="text-gray-300">Customer Satisfaction</div>
-            </div>
-            <div className="text-center text-white">
-              <div className="text-4xl font-bold text-purple-400 mb-2">24/7</div>
-              <div className="text-gray-300">Support Available</div>
-            </div>
-            <div className="text-center text-white">
-              <div className="text-4xl font-bold text-yellow-400 mb-2">50+</div>
-              <div className="text-gray-300">Expert Technicians</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Info */}
-        <div className="max-w-7xl mx-auto mt-16">
-          <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-            <div className="grid md:grid-cols-3 gap-8 text-white">
-              <div className="flex items-center space-x-4">
-                <div className="bg-blue-500/20 p-3 rounded-xl">
-                  <Phone className="w-6 h-6 text-blue-400" />
+        {/* Contact */}
+        <section id="contact" className="mx-auto max-w-7xl px-6 mt-16">
+          <div className={`${cardClass} p-6 md:p-8`}>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-cyan-500/15 ring-1 ring-cyan-400/20">
+                  <Phone className="w-6 h-6 text-cyan-300" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Call Us</h3>
-                  <p className="text-gray-300">+1 (555) 123-4567</p>
+                  <h3 className="font-semibold">Call us</h3>
+                  <p className="text-slate-300">+1 (555) 123‑4567</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-green-500/20 p-3 rounded-xl">
-                  <Mail className="w-6 h-6 text-green-400" />
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-emerald-500/15 ring-1 ring-emerald-400/20">
+                  <Mail className="w-6 h-6 text-emerald-300" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Email Us</h3>
-                  <p className="text-gray-300">support@autoservicepro.com</p>
+                  <h3 className="font-semibold">Email us</h3>
+                  <p className="text-slate-300">support@autoservicepro.com</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="bg-purple-500/20 p-3 rounded-xl">
-                  <MapPin className="w-6 h-6 text-purple-400" />
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-indigo-500/15 ring-1 ring-indigo-400/20">
+                  <MapPin className="w-6 h-6 text-indigo-300" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Visit Us</h3>
-                  <p className="text-gray-300">123 Service Center Ave</p>
+                  <h3 className="font-semibold">Visit us</h3>
+                  <p className="text-slate-300">123 Service Center Ave</p>
                 </div>
               </div>
             </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href="#book" className={`${btnBase} ${ACCENT_GRADIENT} text-slate-950`}>Book a slot</a>
+              <a href="#chat" className={`${btnBase} bg-white/10 border border-white/10 hover:bg-white/15`}>
+                <MessageCircle className="w-5 h-5" /> Ask our AI
+              </a>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Floating Action Button for Chatbot */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <button className="bg-gradient-to-r from-purple-500 to-pink-600 text-white p-4 rounded-full shadow-2xl hover:shadow-pink-500/25 transform hover:scale-110 transition-all duration-300 group">
-          <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-        </button>
-      </div>
-
-      {/* Chat Widget */}
+        {/* Footer */}
+        <footer className="mx-auto max-w-7xl px-6 mt-16 pb-24 md:pb-14">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-400">
+            <p>© {new Date().getFullYear()} AutoServicePro. All rights reserved.</p>
+            <div className="flex gap-4">
+              <a href="#" className="hover:text-slate-200">Privacy</a>
+              <a href="#" className="hover:text-slate-200">Terms</a>
+              <a href="#" className="hover:text-slate-200">Status</a>
+            </div>
+          </div>
+        </footer>
+      </main>
       <ChatWidget />
-
       {/* Animated Car Icon */}
-      <div className="fixed bottom-0 left-0 w-full h-32 pointer-events-none overflow-hidden">
-        <div className="absolute bottom-8 -left-20 animate-bounce" style={{animationDuration: '3s'}}>
-          <Car className="w-16 h-16 text-blue-400/30 transform rotate-90" />
+      <div className="fixed bottom-0 left-0 w-full h-28 pointer-events-none overflow-hidden">
+        <div className="absolute bottom-6 -left-16 animate-bounce" style={{ animationDuration: "3s" }}>
+          <Car className="w-14 h-14 text-cyan-400/30 rotate-90" />
         </div>
       </div>
     </div>

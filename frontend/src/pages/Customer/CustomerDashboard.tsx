@@ -28,44 +28,6 @@ const CustomerDashboard: React.FC = () => {
         <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-purple-500 rounded-full opacity-10 animate-pulse" style={{animationDelay: '4s'}}></div>
       </div>
 
-      {/* Sidebar */}
-      <aside className="w-64 bg-gradient-to-b from-green-600 to-teal-600 text-white flex flex-col shadow-2xl z-10">
-        <div className="p-6 text-2xl font-bold border-b border-green-500">
-          Customer Panel
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <button
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
-            onClick={() => navigate("/customer/orders")}
-          >
-            <ShoppingCart className="w-5 h-5" />
-            My Orders
-          </button>
-          <button
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
-            onClick={() => navigate("/customer/profile")}
-          >
-            <User className="w-5 h-5" />
-            My Profile
-          </button>
-          <button
-            className="w-full flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-green-500 transition-all"
-            onClick={() => navigate("/customer/support")}
-          >
-            <LifeBuoy className="w-5 h-5" />
-            Support
-          </button>
-        </nav>
-        <div className="p-4 border-t border-green-500">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </div>
-      </aside>
 
       {/* Main Content */}
       <main className="flex-1 p-8 overflow-auto relative z-10">

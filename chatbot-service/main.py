@@ -1,11 +1,13 @@
 import os
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict
+from datetime import datetime, timedelta
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import google.generativeai as genai
 from dotenv import load_dotenv
+from database_service import get_db_service
 
 # Load environment variables
 load_dotenv()
@@ -41,6 +43,14 @@ genai.configure(api_key=GOOGLE_AI_API_KEY)
 # Initialize the model
 model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
+# Initialize database service
+try:
+    db_service = get_db_service()
+    logger.info("Database service initialized successfully")
+except Exception as e:
+    logger.warning(f"Database service initialization failed: {e}. Chatbot will work without database access.")
+    db_service = None
+
 # Pydantic models
 class ChatMessage(BaseModel):
     role: str = Field(..., description="Role of the message sender (user or assistant)")
@@ -62,23 +72,116 @@ class HealthResponse(BaseModel):
     model: str = Field(..., description="AI model being used")
     version: str = Field(..., description="API version")
 
+# Helper functions for database queries
+def get_contextual_info(message: str) -> Dict:
+    """Extract contextual information from user message for database queries"""
+    context = {
+        'services': None,
+        'available_slots': None,
+        'service_info': None,
+        'date': None
+    }
+    
+    if not db_service:
+        return context
+    
+    message_lower = message.lower()
+    
+    # Check if user is asking about services
+    service_keywords = ['service', 'services', 'what do you offer', 'available services', 'types of service']
+    if any(keyword in message_lower for keyword in service_keywords):
+        context['services'] = db_service.get_all_services()
+    
+    # Check if user is asking about appointment availability
+    availability_keywords = ['available', 'availability', 'slot', 'slots', 'when can', 'schedule', 'book']
+    if any(keyword in message_lower for keyword in availability_keywords):
+        # Try to extract date from message
+        today = datetime.now()
+        # Default to tomorrow if no date mentioned
+        target_date = today + timedelta(days=1)
+        
+        # Try to parse date mentions
+        if 'today' in message_lower:
+            target_date = today
+        elif 'tomorrow' in message_lower:
+            target_date = today + timedelta(days=1)
+        elif 'monday' in message_lower or 'tuesday' in message_lower or 'wednesday' in message_lower:
+            days_ahead = 0
+            if 'monday' in message_lower:
+                days_ahead = (0 - today.weekday()) % 7
+            elif 'tuesday' in message_lower:
+                days_ahead = (1 - today.weekday()) % 7
+            elif 'wednesday' in message_lower:
+                days_ahead = (2 - today.weekday()) % 7
+            target_date = today + timedelta(days=days_ahead)
+        
+        context['date'] = target_date
+        context['available_slots'] = db_service.get_available_slots(target_date)
+    
+    # Check for specific service name
+    services = db_service.get_all_services()
+    for service in services:
+        if service['service_name'].lower() in message_lower:
+            context['service_info'] = service
+            break
+    
+    return context
+
+def format_services_info(services: List[Dict]) -> str:
+    """Format services information for the AI"""
+    if not services:
+        return "No services are currently available."
+    
+    info = "Available Services:\n"
+    for service in services:
+        duration_hours = service['estimated_duration_minutes'] / 60
+        info += f"- {service['service_name']}: ${service['base_price']} (Duration: {duration_hours:.1f} hours, Category: {service['category']})\n"
+        if service.get('description'):
+            info += f"  Description: {service['description'][:100]}...\n"
+    
+    return info
+
+def format_available_slots(slots: List[Dict], date: datetime) -> str:
+    """Format available slots information for the AI"""
+    if not slots:
+        return f"No available slots for {date.strftime('%B %d, %Y')}. Please try another date."
+    
+    info = f"Available appointment slots for {date.strftime('%B %d, %Y')}:\n"
+    for i, slot in enumerate(slots[:10], 1):  # Limit to first 10 slots
+        slot_time = datetime.fromisoformat(slot['start_time'])
+        info += f"{i}. {slot['formatted_time']}\n"
+    
+    if len(slots) > 10:
+        info += f"\n... and {len(slots) - 10} more slots available."
+    
+    info += "\nBusiness Hours: 8:00 AM - 6:00 PM (Monday - Saturday)"
+    return info
+
 # System prompt for GearSync context
 SYSTEM_PROMPT = """
 You are GearSync AI Assistant, a helpful chatbot for an automotive service management platform. 
 You help customers and employees with:
 
 1. **Appointment Scheduling**: Help users book, reschedule, or cancel service appointments
+   - You can check available appointment slots from the database
+   - Business hours: 8:00 AM - 6:00 PM, Monday to Saturday
+   - Appointments are scheduled in 30-minute slots
+
 2. **Service Information**: Provide details about available services, pricing, and time estimates
+   - You have access to real-time service information from the database
+   - Include pricing, duration, and descriptions when available
+
 3. **Vehicle Support**: Answer questions about vehicle maintenance, repairs, and service history
 4. **General Support**: Help with account management, billing questions, and platform navigation
 
 Guidelines:
 - Be professional, friendly, and helpful
-- Provide accurate information based on automotive knowledge
+- When checking availability, use the provided database information
 - If you don't know something specific about GearSync, say so and offer to connect them with a human representative
 - Keep responses concise but informative
 - Use automotive terminology appropriately
 - Always prioritize customer satisfaction and safety
+- When providing appointment availability, be specific about dates and times
 
 Remember: You're representing GearSync, a trusted automotive service provider.
 """
@@ -123,8 +226,40 @@ async def chat(request: ChatRequest):
                 detail="Message cannot be empty"
             )
 
+        # Get contextual information from database if available
+        contextual_info = ""
+        if db_service:
+            try:
+                context = get_contextual_info(request.message)
+                
+                # Add services information if requested
+                if context['services']:
+                    contextual_info += format_services_info(context['services']) + "\n\n"
+                
+                # Add available slots if requested
+                if context['available_slots'] and context['date']:
+                    contextual_info += format_available_slots(context['available_slots'], context['date']) + "\n\n"
+                
+                # Add specific service info if found
+                if context['service_info']:
+                    service = context['service_info']
+                    duration_hours = service['estimated_duration_minutes'] / 60
+                    contextual_info += f"Service Details:\n"
+                    contextual_info += f"- Name: {service['service_name']}\n"
+                    contextual_info += f"- Price: ${service['base_price']}\n"
+                    contextual_info += f"- Duration: {duration_hours:.1f} hours\n"
+                    if service.get('description'):
+                        contextual_info += f"- Description: {service['description']}\n"
+                    contextual_info += "\n"
+            except Exception as e:
+                logger.error(f"Error getting contextual info: {e}")
+        
         # Prepare conversation history
         conversation_parts = [SYSTEM_PROMPT]
+        
+        # Add contextual information if available
+        if contextual_info:
+            conversation_parts.append(f"Current Database Information:\n{contextual_info}")
         
         # Add conversation history if provided
         if request.conversation_history:
@@ -187,7 +322,40 @@ async def simple_chat(message: str):
                 detail="Message cannot be empty"
             )
         
-        response = model.generate_content(f"{SYSTEM_PROMPT}\n\nUser: {message}")
+        # Get contextual information from database if available
+        contextual_info = ""
+        if db_service:
+            try:
+                context = get_contextual_info(message)
+                
+                # Add services information if requested
+                if context['services']:
+                    contextual_info += format_services_info(context['services']) + "\n\n"
+                
+                # Add available slots if requested
+                if context['available_slots'] and context['date']:
+                    contextual_info += format_available_slots(context['available_slots'], context['date']) + "\n\n"
+                
+                # Add specific service info if found
+                if context['service_info']:
+                    service = context['service_info']
+                    duration_hours = service['estimated_duration_minutes'] / 60
+                    contextual_info += f"Service Details:\n"
+                    contextual_info += f"- Name: {service['service_name']}\n"
+                    contextual_info += f"- Price: ${service['base_price']}\n"
+                    contextual_info += f"- Duration: {duration_hours:.1f} hours\n"
+                    if service.get('description'):
+                        contextual_info += f"- Description: {service['description']}\n"
+                    contextual_info += "\n"
+            except Exception as e:
+                logger.error(f"Error getting contextual info: {e}")
+        
+        prompt = SYSTEM_PROMPT
+        if contextual_info:
+            prompt += f"\n\nCurrent Database Information:\n{contextual_info}"
+        prompt += f"\n\nUser: {message}"
+        
+        response = model.generate_content(prompt)
         
         if not response.text:
             raise HTTPException(
@@ -225,6 +393,73 @@ async def list_models():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to list models: {str(e)}"
+        )
+
+@app.get("/services")
+async def get_services():
+    """Get all available services from database"""
+    if not db_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service not available"
+        )
+    try:
+        services = db_service.get_all_services()
+        return {"services": services}
+    except Exception as e:
+        logger.error(f"Error fetching services: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch services: {str(e)}"
+        )
+
+@app.get("/availability")
+async def get_availability(date: Optional[str] = None):
+    """Get available appointment slots for a specific date"""
+    if not db_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service not available"
+        )
+    try:
+        if date:
+            target_date = datetime.fromisoformat(date)
+        else:
+            target_date = datetime.now() + timedelta(days=1)
+        
+        slots = db_service.get_available_slots(target_date)
+        return {
+            "date": target_date.isoformat(),
+            "available_slots": slots,
+            "total_slots": len(slots)
+        }
+    except Exception as e:
+        logger.error(f"Error fetching availability: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch availability: {str(e)}"
+        )
+
+@app.get("/availability/check")
+async def check_slot_availability(datetime_str: str, service_duration_minutes: int = 60):
+    """Check if a specific time slot is available"""
+    if not db_service:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database service not available"
+        )
+    try:
+        is_available = db_service.check_slot_availability(datetime_str, service_duration_minutes)
+        return {
+            "datetime": datetime_str,
+            "available": is_available,
+            "service_duration_minutes": service_duration_minutes
+        }
+    except Exception as e:
+        logger.error(f"Error checking slot availability: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to check availability: {str(e)}"
         )
 
 if __name__ == "__main__":
