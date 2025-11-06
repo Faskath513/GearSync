@@ -6,6 +6,7 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import EmployeeDashboard from "./pages/Employee/EmployeeDashboard";
 import CustomerDashboard from "./pages/Customer/CustomerDashboard";
 import ProtectedRoute from "./pages/ProtectedRoute";
+import UserProfilePage from './pages/UserProfilePage';
 
 const App: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             }
           />
+          <Route path="/profile" element={<UserProfilePage />} />
 
           {/* Employee Dashboard */}
           <Route
