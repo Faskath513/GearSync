@@ -79,6 +79,17 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
            """)
     BigDecimal sumFinalCostByStatus(AppointmentStatus status);
 
+
+    long countByCustomer_Email(String email);
+
+    long countByCustomer_EmailAndStatus(String email, AppointmentStatus status);
+
+    @Query("select coalesce(sum(a.finalCost), 0) from Appointment a where a.customer.email = :email and a.status = com.gearsync.backend.model.AppointmentStatus.COMPLETED")
+    BigDecimal sumSpentByCustomerCompleted(String email);
+
+    List<Appointment> findAllByCustomerIdAndScheduledDateTimeGreaterThanEqualOrderByScheduledDateTimeAsc(
+            Long customerId, LocalDateTime scheduledFrom);
+
      @Query("""
         select distinct a
         from Appointment a
@@ -91,4 +102,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findAllWithDetails();
 
     List<Appointment> findByCustomerId(Long customerId);
+
+    Long countByAssignedEmployee_Email(String email);
+
+    Long countByAssignedEmployee_EmailAndStatus(String email, AppointmentStatus status);
 }

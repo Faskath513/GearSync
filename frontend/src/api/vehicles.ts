@@ -16,6 +16,26 @@ export interface Vehicle extends VehicleRequest {
   updatedAt?: string;
 }
 
+export interface AdminVehicleDTO {
+  id: number;
+  registrationNumber?: string;
+  make?: string;
+  model?: string;
+  year?: number | string;
+  color?: string;
+  vinNumber?: string;
+  mileage?: number;
+  customerId?: number;
+  customerName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const listAllVehiclesAdmin = async (): Promise<AdminVehicleDTO[]> => {
+  const res = await api.get<AdminVehicleDTO[]>("admin/vehicles");
+  return Array.isArray(res.data) ? res.data : [];
+};
+
 export const listMyVehicles = async (): Promise<Vehicle[]> => {
   const res = await api.get<Vehicle[]>("customer/vehicles");
   return res.data;

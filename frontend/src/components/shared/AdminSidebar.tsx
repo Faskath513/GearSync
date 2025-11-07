@@ -11,6 +11,7 @@ import {
   Car,
   Wrench,
   BarChart3,
+  User,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -51,6 +52,11 @@ const AdminSidebar: React.FC = () => {
       path: "/admin-dashboard/projects",
     },
     {
+      title: "Customers",
+      icon: Users,
+      path: "/admin-dashboard/customers",
+    },
+    {
       title: "Reports",
       icon: BarChart3,
       path: "/admin-dashboard/reports",
@@ -59,6 +65,11 @@ const AdminSidebar: React.FC = () => {
       title: "Settings",
       icon: Settings,
       path: "/admin-dashboard/settings",
+    },
+    {
+      title: "Profile",
+      icon: User,
+      path: "/admin-dashboard/profile",
     },
   ];
 
