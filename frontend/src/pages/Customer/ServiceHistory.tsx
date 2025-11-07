@@ -13,6 +13,7 @@ const ServiceHistory: React.FC = () => {
         <div className="p-12 text-center">
           <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-600">No service history yet</p>
+          
         </div>
       </div>
     </div>
