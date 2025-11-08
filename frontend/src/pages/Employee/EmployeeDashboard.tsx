@@ -1,8 +1,9 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { CheckSquare, FileText, User, LogOut } from "lucide-react";
+import { CheckSquare, FileText, User, LogOut, ClipboardList, CheckCircle2, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import { getAllEmployeeDashboardStats, EmployeeDashboardStats } from "../../api/employeeDashboard";
 
 /**
  * EmployeeDashboard — GearSync (dark / glass / neon)
@@ -19,17 +20,51 @@ const BTN =
 const EmployeeDashboard: React.FC = () => {
   const { logout, role } = useContext(AuthContext)!;
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<EmployeeDashboardStats | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const dashboardStats = await getAllEmployeeDashboardStats();
+        setStats(dashboardStats);
+      } catch (error) {
+        console.error("Error fetching employee dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const handleLogout = () => {
     logout();
     navigate("/");
   };
 
-  const stats = [
-    { title: "Assigned Tasks", value: 12, icon: CheckSquare, tone: "text-cyan-300" },
-    { title: "Completed Tasks", value: 8, icon: CheckSquare, tone: "text-emerald-300" },
-    { title: "Pending Reviews", value: 3, icon: FileText, tone: "text-amber-300" },
-  ];
+  const statCards = stats
+    ? [
+        { title: "Assigned Appointments", value: stats.assignedAppointments, icon: ClipboardList, tone: "text-cyan-300" },
+        { title: "Completed Appointments", value: stats.completedAppointments, icon: CheckCircle2, tone: "text-emerald-300" },
+        { title: "Ongoing Appointments", value: stats.ongoingAppointments, icon: Clock, tone: "text-amber-300" },
+      ]
+    : [];
+
+  if (loading) {
+    return (
+      <div className="relative min-h-screen text-white flex items-center justify-center">
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950" />
+        </div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto"></div>
+          <p className="mt-4 text-slate-300">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen text-white">
@@ -76,7 +111,7 @@ const EmployeeDashboard: React.FC = () => {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {stats.map(({ title, value, icon: Icon, tone }) => (
+          {statCards.map(({ title, value, icon: Icon, tone }) => (
             <motion.div
               key={title}
               className={`${CARD} p-5`}
@@ -100,28 +135,58 @@ const EmployeeDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <section className={`${CARD} p-6`}>
             <div className="flex items-center gap-2 mb-2">
-              <CheckSquare className="w-5 h-5 text-cyan-300" />
-              <h2 className="text-lg font-semibold">Task Overview</h2>
+              <ClipboardList className="w-5 h-5 text-cyan-300" />
+              <h2 className="text-lg font-semibold">Assignment Overview</h2>
             </div>
             <p className="text-sm text-slate-300/90">
-              View your current tasks, their progress, and pending assignments.
+              View your assigned appointments, their progress, and pending work.
             </p>
-            <div className="mt-4 border border-white/10 rounded-xl p-4 text-sm text-slate-400">
-              No recent task updates.
-            </div>
+            {stats && (
+              <div className="mt-4 space-y-2">
+                <div className="border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-300">Total Assigned</span>
+                    <span className="text-lg font-bold text-cyan-300">{stats.assignedAppointments}</span>
+                  </div>
+                </div>
+                <div className="border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-300">In Progress</span>
+                    <span className="text-lg font-bold text-amber-300">{stats.ongoingAppointments}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           <section className={`${CARD} p-6`}>
             <div className="flex items-center gap-2 mb-2">
-              <FileText className="w-5 h-5 text-emerald-300" />
-              <h2 className="text-lg font-semibold">Reports</h2>
+              <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+              <h2 className="text-lg font-semibold">Performance Summary</h2>
             </div>
             <p className="text-sm text-slate-300/90">
-              Check detailed reports of your work and team performance.
+              Track your completed work and performance metrics.
             </p>
-            <div className="mt-4 border border-white/10 rounded-xl p-4 text-sm text-slate-400">
-              No reports available yet.
-            </div>
+            {stats && (
+              <div className="mt-4 space-y-2">
+                <div className="border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-300">Completed</span>
+                    <span className="text-lg font-bold text-emerald-300">{stats.completedAppointments}</span>
+                  </div>
+                </div>
+                <div className="border border-white/10 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-300">Completion Rate</span>
+                    <span className="text-lg font-bold text-cyan-300">
+                      {stats.assignedAppointments > 0 
+                        ? `${((stats.completedAppointments / stats.assignedAppointments) * 100).toFixed(1)}%`
+                        : "0%"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </main>
