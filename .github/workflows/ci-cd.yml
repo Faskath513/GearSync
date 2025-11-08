@@ -13,7 +13,7 @@ env:
   AWS_REGION: ap-south-1
   ECR_REPOSITORY: gear-sync/frontend
   IMAGE_TAG: latest
-  AWS_ROLE_ARN: arn:aws:iam::509951859952:oidc-provider/token.actions.githubusercontent.com
+  AWS_ROLE_ARN: arn:aws:iam::509951859952:role/GitHubAction-Role
   ECR_REGISTRY: 509951859952.dkr.ecr.ap-south-1.amazonaws.com
 
 jobs:
