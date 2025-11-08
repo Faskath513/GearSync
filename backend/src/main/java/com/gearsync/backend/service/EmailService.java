@@ -788,4 +788,159 @@ public class EmailService {
         </html>
         """, appName, customerName, email, appUrl, appName, appName, LocalDateTime.now().getYear(), appName);
     }
+
+    public void sendCustomerProjectConfirmation(String toEmail, String customerName,
+                                                String projectName, BigDecimal estimatedCost, String estimatedDurationHours) {
+        try {
+            String subject = "Project Confirmation - " + appName;
+            String htmlContent = buildProjectConfirmationHtml(toEmail, customerName, projectName, estimatedCost, estimatedDurationHours);
+            sendHtmlEmail(toEmail, subject, htmlContent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to send project confirmation email", e);
+        }
+    }
+
+    private String buildProjectConfirmationHtml(String toEmail, String customerName,
+                                                String projectName, BigDecimal estimatedCost, String estimatedDurationHours) {
+
+        return String.format("""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {
+                font-family: 'Arial', sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .container {
+                background: #ffffff;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            .header {
+                background: linear-gradient(135deg, #1e3c72 0%%, #2a5298 100%%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 26px;
+            }
+            .content {
+                padding: 30px;
+            }
+            .details-box {
+                background: #f8f9fa;
+                border-left: 4px solid #1e3c72;
+                padding: 20px;
+                margin: 20px 0;
+                border-radius: 5px;
+            }
+            .detail-item {
+                margin: 10px 0;
+            }
+            .detail-label {
+                font-weight: bold;
+                color: #1e3c72;
+                display: inline-block;
+                width: 180px;
+            }
+            .detail-value {
+                background: white;
+                padding: 8px 15px;
+                border-radius: 4px;
+                display: inline-block;
+                border: 1px solid #dee2e6;
+            }
+            .btn {
+                display: inline-block;
+                padding: 12px 30px;
+                background: linear-gradient(135deg, #1e3c72 0%%, #2a5298 100%%);
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                margin: 25px 0;
+                font-weight: bold;
+            }
+            .footer {
+                background: #f8f9fa;
+                padding: 20px;
+                text-align: center;
+                font-size: 12px;
+                color: #6c757d;
+            }
+            .note-box {
+                background: #e7f3ff;
+                padding: 15px;
+                border-radius: 5px;
+                border-left: 4px solid #007bff;
+                margin-top: 25px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Project Confirmation</h1>
+                <p>Your Project Has Been Successfully Created</p>
+            </div>
+
+            <div class="content">
+                <h2>Hello %s, 👋</h2>
+                <p>We’re pleased to confirm that your project has been successfully registered under <strong>%s</strong>.</p>
+
+                <div class="details-box">
+                    <div class="detail-item">
+                        <span class="detail-label">📁 Project Name:</span>
+                        <span class="detail-value">%s</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">💰 Estimated Cost:</span>
+                        <span class="detail-value">LKR %s</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">⏱ Estimated Duration:</span>
+                        <span class="detail-value">%s hours</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">📧 Registered Email:</span>
+                        <span class="detail-value">%s</span>
+                    </div>
+                </div>
+
+                <div class="note-box">
+                    <strong>📅 Project Status:</strong>
+                    <p>Your project is currently in the initial planning stage. Our team will contact you shortly for further details and scheduling.</p>
+                </div>
+
+                <center>
+                    <a href="%s/projects" class="btn">View Project Details</a>
+                </center>
+
+                <p style="margin-top: 30px; font-size: 14px; color: #6c757d;">
+                    Thank you for trusting %s with your project. We look forward to delivering the best service experience.
+                </p>
+            </div>
+
+            <div class="footer">
+                <p>This email was sent by %s</p>
+                <p>If you didn’t create this project, please contact us immediately.</p>
+                <p style="margin-top: 15px; color: #999;">
+                    © %d %s. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """, customerName, appName, projectName, estimatedCost.toPlainString(),
+                estimatedDurationHours, toEmail, appUrl, appName, appName, LocalDateTime.now().getYear(), appName);
+    }
+
 }
