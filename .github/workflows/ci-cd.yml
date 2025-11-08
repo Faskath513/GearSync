@@ -1,0 +1,46 @@
+name: build and push to ECR
+
+on:
+  push:
+    branches:
+      - docker
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: gear-sync/frontend
+  IMAGE_TAG: latest
+  AWS_ROLE_ARN: arn:aws:iam::123456789012:role/GearSync-GitHubActionsRole
+  ECR_REGISTRY: 509951859952.dkr.ecr.ap-south-1.amazonaws.com
+
+jobs:
+  frontend:
+    name: Build and Push Frontend Docker Image to ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          install: true
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Login to AWS
+        run: aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+      - name: Build, Tag, and Push Frontend Docker Image to ECR
+        run: |
+          docker buildx build --platform linux/amd64 \
+           -t ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} -f ./frontend/Dockerfile .
+          docker push ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
