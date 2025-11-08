@@ -21,6 +21,20 @@ import {
   getDashboardTodayAppointments,
 } from "../../api/admin";
 import { motion } from "framer-motion";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  BarChart,
+  Bar,
+} from "recharts";
 
 // ---- Theme tokens (align with Home) ----
 const ACCENT_GRADIENT = "bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400";
@@ -45,6 +59,9 @@ const AdminDashboard: React.FC = () => {
     todayAppointmentsCount: 0,
   });
 
+  // --- Local demo series (replace with API series when available) ---
+  const [range, setRange] = useState<7 | 30>(7);
+
   useEffect(() => {
     (async () => {
       try {
@@ -58,36 +75,36 @@ const AdminDashboard: React.FC = () => {
           confirmedAppointments,
           todayAppointments,
         ] = await Promise.all([
-          getDashboardUserCount().catch(err => {
+          getDashboardUserCount().catch((err) => {
             console.error("Error fetching user count:", err);
             return 0;
           }),
-          getDashboardAppointmentCount().catch(err => {
+          getDashboardAppointmentCount().catch((err) => {
             console.error("Error fetching appointment count:", err);
             return 0;
           }),
-          getDashboardVehicleCount().catch(err => {
+          getDashboardVehicleCount().catch((err) => {
             console.error("Error fetching vehicle count:", err);
             return 0;
           }),
-          getDashboardTotalEarnings().catch(err => {
+          getDashboardTotalEarnings().catch((err) => {
             console.error("Error fetching total earnings:", err);
             return 0;
           }),
-          getDashboardActiveServiceCount().catch(err => {
+          getDashboardActiveServiceCount().catch((err) => {
             console.error("Error fetching active service count:", err);
             return 0;
           }),
-          getDashboardConfirmedAppointments().catch(err => {
+          getDashboardConfirmedAppointments().catch((err) => {
             console.error("Error fetching confirmed appointments:", err);
             return [];
           }),
-          getDashboardTodayAppointments().catch(err => {
+          getDashboardTodayAppointments().catch((err) => {
             console.error("Error fetching today appointments:", err);
             return [];
           }),
         ]);
-        
+
         console.log("Dashboard data received:", {
           userCount,
           appointmentCount,
@@ -97,7 +114,7 @@ const AdminDashboard: React.FC = () => {
           confirmedAppointments,
           todayAppointments,
         });
-        
+
         setStats({
           userCount: Number(userCount) || 0,
           appointmentCount: Number(appointmentCount) || 0,
@@ -115,7 +132,6 @@ const AdminDashboard: React.FC = () => {
     })();
   }, []);
 
-
   const nf = useMemo(() => new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }), []);
   const cf = useMemo(() => new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }), []);
 
@@ -124,9 +140,39 @@ const AdminDashboard: React.FC = () => {
     { label: "Total Appointments", value: nf.format(stats.appointmentCount), icon: Calendar },
     { label: "Total Vehicles", value: nf.format(stats.vehicleCount), icon: Car },
     { label: "Active Services", value: nf.format(stats.activeServiceCount), icon: BarChart2 },
-    { label: "Confirmed Today", value: nf.format(stats.confirmedAppointmentsCount), icon: CheckCircle },
+    { label: "Confirmed Today", value: nf.format(stats.todayAppointmentsCount), icon: CheckCircle },
     { label: "Total Earnings", value: cf.format(stats.totalEarnings), icon: DollarSign },
   ];
+
+  // ---------- Chart Data Builders (replace with real API series) ----------
+  // Creates a soft trend from totals so charts look useful until server series is added.
+  const buildAppointmentsSeries = (days: number) => {
+    const total = Math.max(0, stats.appointmentCount);
+    const today = Math.max(0, stats.todayAppointmentsCount);
+    // create a gentle curve ending at today's count
+    const base = Math.max(1, Math.floor(total / days));
+    return Array.from({ length: days }, (_, i) => {
+      const dayIndex = i - (days - 1);
+      const label = new Date(Date.now() + dayIndex * 24 * 3600 * 1000)
+        .toLocaleDateString(undefined, { month: "short", day: "2-digit" });
+      const value = Math.max(0, Math.round(base * (0.6 + (i / days) * 0.8)));
+      return { day: label, appointments: i === days - 1 ? today : value };
+    });
+  };
+
+  const buildStatusPie = () => {
+    const confirmed = stats.confirmedAppointmentsCount;
+    const other = Math.max(0, stats.appointmentCount - confirmed);
+    return [
+      { name: "Confirmed", value: confirmed },
+      { name: "Other", value: other },
+    ];
+  };
+
+  const series = useMemo(() => buildAppointmentsSeries(range), [stats.appointmentCount, stats.todayAppointmentsCount, range]);
+  const pie = useMemo(() => buildStatusPie(), [stats.confirmedAppointmentsCount, stats.appointmentCount]);
+
+  const COLORS = ["#22d3ee", "#a78bfa", "#34d399", "#f472b6", "#fbbf24"]; // matches accent palette
 
   return (
     <div className="relative min-h-screen text-white overflow-hidden">
@@ -164,6 +210,12 @@ const AdminDashboard: React.FC = () => {
               <p className="text-slate-300/90 text-sm">Manage users, appointments, vehicles, and revenue at a glance.</p>
             </div>
           </div>
+
+          <div className="hidden sm:flex items-center gap-2">
+            <button className={`${BTN} bg-white/5 hover:bg-white/10`} onClick={() => navigate("/admin/appointments")}>Appointments</button>
+            <button className={`${BTN} bg-white/5 hover:bg-white/10`} onClick={() => navigate("/admin/projects")}>Projects</button>
+            <button className={`${BTN} ${ACCENT_GRADIENT} text-slate-950 hover:brightness-110`} onClick={() => navigate("/admin/services")}>Services</button>
+          </div>
         </div>
 
         {/* Loading */}
@@ -197,6 +249,75 @@ const AdminDashboard: React.FC = () => {
               ))}
             </section>
 
+            {/* Charts Row */}
+            <section className="mt-10 grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Area Chart */}
+              <div className={`xl:col-span-2 ${CARD} p-6`}>
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${ACCENT_GRADIENT} text-slate-950 ring-1 ring-white/10`}>
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Appointments Trend</h2>
+                    <span className="text-slate-400 text-sm">(derived locally)</span>
+                  </div>
+                  <div className="inline-flex items-center gap-2 bg-white/5 ring-1 ring-white/10 rounded-xl p-1">
+                    <button
+                      onClick={() => setRange(7)}
+                      className={`px-3 py-1 rounded-lg text-sm ${range === 7 ? "bg-white/10" : "hover:bg-white/5"}`}
+                    >
+                      7d
+                    </button>
+                    <button
+                      onClick={() => setRange(30)}
+                      className={`px-3 py-1 rounded-lg text-sm ${range === 30 ? "bg-white/10" : "hover:bg-white/5"}`}
+                    >
+                      30d
+                    </button>
+                  </div>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={series} margin={{ left: 8, right: 8, top: 10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#22d3ee" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="day" tick={{ fill: "#cbd5e1" }} tickLine={false} axisLine={{ stroke: "#475569" }} />
+                      <YAxis tick={{ fill: "#cbd5e1" }} tickLine={false} axisLine={{ stroke: "#475569" }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#e2e8f0" }} />
+                      <Area type="monotone" dataKey="appointments" stroke="#22d3ee" fillOpacity={1} fill="url(#colorAppointments)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Pie Chart */}
+              <div className={`${CARD} p-6`}>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={`p-2 rounded-xl ${ACCENT_GRADIENT} text-slate-950 ring-1 ring-white/10`}>
+                    <CheckCircle className="w-5 h-5" />
+                  </div>
+                  <h2 className="text-lg font-semibold">Appointment Status Split</h2>
+                </div>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={pie} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={4}>
+                        {pie.map((_, idx) => (
+                          <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Legend wrapperStyle={{ color: "#cbd5e1" }} />
+                      <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#e2e8f0" }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </section>
+
             {/* Secondary Panels */}
             <section className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className={`${CARD} p-6`}>
@@ -220,7 +341,7 @@ const AdminDashboard: React.FC = () => {
               <div className={`${CARD} p-6`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className={`p-2 rounded-xl ${ACCENT_GRADIENT} text-slate-950 ring-1 ring-white/10`}>
-                    <CheckCircle className="w-5 h-5" />
+                    <BarChart2 className="w-5 h-5" />
                   </div>
                   <h2 className="text-lg font-semibold">Quick Stats</h2>
                 </div>
