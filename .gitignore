@@ -1,7 +1,6 @@
 /backend/target
 /frontend/node_modules
 .DS_Store
-.env
 .application-dev.yml
 backend/.idea
 .idea
@@ -11,3 +10,5 @@ package-lock.json
 
 /Users/mohammedfaskath/Desktop/GearSync/chatbot-service/__pycache__
 
+config.bat
+node_modules
