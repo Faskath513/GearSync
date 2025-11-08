@@ -295,7 +295,14 @@ public class AdminServices {
         project.setDescription(project.getDescription() + rejectionNote);
 
         Project updated = projectRepository.save(project);
-
+        String customerEmail = project.getCustomer().getEmail();
+        String customerName = project.getCustomer().getFirstName() + " " + project.getCustomer().getLastName();
+        String projectName = project.getProjectName();
+        String estimatedDuration = project.getEstimatedDurationHours() != null ?
+                project.getEstimatedDurationHours().toString() : "N/A";
+        BigDecimal estimatedCost = project.getEstimatedCost() != null ?
+                project.getEstimatedCost() : BigDecimal.ZERO;
+        emailService.sendCustomerProjectConfirmation(customerEmail,customerName,projectName,estimatedCost,estimatedDuration);
         return convertProjectToResponseDTO(updated);
     }
 
