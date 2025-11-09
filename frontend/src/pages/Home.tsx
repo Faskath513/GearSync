@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import ChatWidget from "../components/ChatWidget";
+import {useNavigate } from "react-router-dom";
 
 /**
  * Enhanced Home component
@@ -72,6 +73,8 @@ const Home: React.FC = () => {
     "Battery Testing & Replacement",
     "Custom Modifications",
   ];
+
+  const navigate = useNavigate();
 
   const steps = [
     {
@@ -145,13 +148,13 @@ const Home: React.FC = () => {
                 booking, and certified technicians—designed for speed and trust.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <a
-                  href="#book"
-                  className={`${btnBase} ${ACCENT_GRADIENT} text-slate-950 shadow-lg shadow-cyan-500/20 hover:brightness-110`}
-                  aria-label="Book an appointment"
-                >
-                  <Calendar className="w-5 h-5" /> Book now
-                </a>
+                <button
+              type="button"
+              onClick={() => navigate("/login")}
+              className={`ml-2 inline-flex items-center rounded-lg px-4 py-2 font-semibold shadow focus-visible:outline-none' ${ACCENT_GRADIENT} text-slate-950 focus-visible:ring-2 focus-visible:ring-cyan-300`}
+            >
+              Book Now
+            </button>
                 <a
                   href="#chat"
                   className={`${btnBase} bg-white/10 border border-white/10 hover:bg-white/15`}
@@ -341,7 +344,9 @@ const Home: React.FC = () => {
           </div>
         </footer>
       </main>
+      <div id="chat">
       <ChatWidget />
+      </div>
       {/* Animated Car Icon */}
       <div className="fixed bottom-0 left-0 w-full h-28 pointer-events-none overflow-hidden">
         <div className="absolute bottom-6 -left-16 animate-bounce" style={{ animationDuration: "3s" }}>

@@ -107,27 +107,43 @@ export interface AssignedProjectDTO {
 
 /** ---- Time log DTOs ---- */
 
+
+/** ---- Time log DTOs (match backend TimeLogResponseDTO/RequestDTO) ---- */
+
 export interface TimeLogDTO {
   id: number;
-  appointmentId?: number | null;
-  projectId?: number | null;
-  description: string;
-  hours: number;
+  startTime: string;
+  endTime: string;
+  durationMinutes: number;
+  workDescription: string;
+  notes: string | null;
+
+  projectId: number | null;
+  projectName: string | null;
+
+  appointmentId: number | null;
+  appointmentDescription: string | null;
+
   createdAt: string;
   updatedAt: string;
 }
 
 export interface TimeLogRequestDTO {
-  appointmentId?: number;
-  projectId?: number;
-  description: string;
-  hours: number;
+  appointmentId?: number; // XOR with projectId
+  projectId?: number;     // XOR with appointmentId
+  startTime: string;      // ISO, e.g. "2025-11-06T16:40:00"
+  endTime: string;        // ISO
+  workDescription: string;
+  notes?: string | null;
 }
 
 export interface TimeLogUpdateDTO {
-  description?: string;
-  hours?: number;
+  startTime?: string;     // ISO
+  endTime?: string;       // ISO
+  workDescription?: string;
+  notes?: string | null;
 }
+
 
 /** ---- Helpers ---- */
 

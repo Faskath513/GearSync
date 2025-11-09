@@ -112,7 +112,7 @@ const Navbar: React.FC<NavbarProps> = ({ theme = "cyanIndigo" }) => {
               <Car className="w-7 h-7 text-slate-950" />
             </span>
             <span className="text-xl sm:text-2xl font-bold tracking-wide">
-              AutoService <span className="opacity-90">Pro</span>
+              GearSync <span className="opacity-90">Pro</span>
             </span>
           </Link>
 

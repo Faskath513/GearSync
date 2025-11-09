@@ -1,12 +1,22 @@
-// src/pages/Employee/TimeLogs.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Clock, Plus, Edit, Trash2, X, Calendar, Timer, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import axios from "axios";
+import {
+  listMyTimeLogs,
+  listAssignedProjects,
+  listAssignedAppointments,
+  createTimeLog as apiCreateTimeLog,
+  updateTimeLog as apiUpdateTimeLog,
+  deleteTimeLog as apiDeleteTimeLog,
+} from "@/api/employee";
+import type {
+  TimeLogDTO,
+  AssignedProjectDTO,
+  AssignedAppointmentDTO,
+  TimeLogRequestDTO,
+} from "@/api/employee";
 
-// ---------------------------------------------
-// Theme tokens (parity with Home/UserManagement)
-// ---------------------------------------------
+/* ---------------------- Theme tokens ---------------------- */
 const ACCENT_GRADIENT =
   "bg-gradient-to-r from-cyan-400 via-sky-400 to-indigo-400";
 const CARD =
@@ -16,39 +26,7 @@ const BTN_BASE =
 const INPUT =
   "w-full rounded-xl bg-white/5 text-white placeholder:text-slate-400 px-3 py-2.5 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-300/70";
 
-// ---------------------------------------------
-// Types
-// ---------------------------------------------
-interface TimeLog {
-  id: number;
-  startTime: string;
-  endTime: string;
-  durationMinutes: number;
-  workDescription: string;
-  notes: string | null;
-  projectId: number | null;
-  projectName: string | null;
-  appointmentId: number | null;
-  appointmentDescription: string | null;
-  createdAt: string;
-}
-
-interface ProjectLite {
-  id: number;
-  projectName?: string;
-}
-
-interface VehicleLite {
-  registrationNumber?: string;
-}
-
-interface AppointmentLite {
-  id: number;
-  appointmentDate?: string;
-  scheduledDateTime?: string;
-  vehicle?: VehicleLite;
-}
-
+/* ---------------------- Form types ---------------------- */
 interface TimeLogFormData {
   workDate: string;   // YYYY-MM-DD
   startTime: string;  // HH:mm
@@ -59,11 +37,46 @@ interface TimeLogFormData {
   notes: string;
 }
 
+/* ---------------------- Helpers ---------------------- */
+const toHHMM = (d: Date) =>
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+const todayDateStr = () => new Date().toISOString().split("T")[0];
+const isToday = (yyyyMMdd: string) => yyyyMMdd === todayDateStr();
+const now = () => new Date();
+
+const normalizeError = (e: any, fallback = "Request failed") => {
+  const data = e?.response?.data ?? e?.message ?? e;
+  if (typeof data === "string") return data;
+  if (Array.isArray(data)) {
+    // Spring @Valid often returns a list of messages
+    return data.map((x) => (typeof x === "string" ? x : JSON.stringify(x))).join("\n");
+  }
+  if (data?.message) return data.message;
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return fallback;
+  }
+};
+
+const clampToNowIfToday = (draft: TimeLogFormData) => {
+  if (!isToday(draft.workDate)) return draft;
+  const nowStr = toHHMM(now());
+  if (draft.endTime > nowStr) draft.endTime = nowStr;
+  if (draft.startTime > nowStr) draft.startTime = nowStr;
+  if (draft.startTime > draft.endTime) draft.startTime = draft.endTime;
+  return draft;
+};
+
+/* ========================================================
+ *                       Component
+ * ====================================================== */
 const TimeLogs: React.FC = () => {
   // Data
-  const [timeLogs, setTimeLogs] = useState<TimeLog[]>([]);
-  const [projects, setProjects] = useState<ProjectLite[]>([]);
-  const [appointments, setAppointments] = useState<AppointmentLite[]>([]);
+  const [timeLogs, setTimeLogs] = useState<TimeLogDTO[]>([]);
+  const [projects, setProjects] = useState<AssignedProjectDTO[]>([]);
+  const [appointments, setAppointments] = useState<AssignedAppointmentDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -71,58 +84,61 @@ const TimeLogs: React.FC = () => {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
-  const [selectedLog, setSelectedLog] = useState<TimeLog | null>(null);
+  const [selectedLog, setSelectedLog] = useState<TimeLogDTO | null>(null);
+
+  // Better defaults: now-10min → now
+  const initEnd = now();
+  const initStart = new Date(initEnd.getTime() - 10 * 60 * 1000);
+
   const [formData, setFormData] = useState<TimeLogFormData>({
-    workDate: new Date().toISOString().split("T")[0],
-    startTime: "09:00",
-    endTime: "17:00",
+    workDate: todayDateStr(),
+    startTime: toHHMM(initStart),
+    endTime: toHHMM(initEnd),
     projectId: "",
     appointmentId: "",
     workDescription: "",
     notes: "",
   });
+
   const [errors, setErrors] = useState<Partial<Record<keyof TimeLogFormData, string>>>({});
 
-  // ---------------------------------------------
-  // Fetch
-  // ---------------------------------------------
+  /* ---------------------- Fetch ---------------------- */
+  const refreshLogs = async () => {
+    const logs = await listMyTimeLogs();
+    setTimeLogs(Array.isArray(logs) ? logs : []);
+  };
+
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
-        const headers = { Authorization: `Bearer ${token}` };
-
-        const [logsRes, projRes, apptRes] = await Promise.all([
-          axios.get<TimeLog[]>("http://localhost:8080/api/employee/timelogs", { headers }),
-          axios.get<ProjectLite[]>("http://localhost:8080/api/employee/projects", { headers }),
-          axios.get<AppointmentLite[]>("http://localhost:8080/api/employee/appointments", { headers }),
+        const [logs, proj, appt] = await Promise.all([
+          listMyTimeLogs(),
+          listAssignedProjects(),
+          listAssignedAppointments(),
         ]);
-
-        setTimeLogs(Array.isArray(logsRes.data) ? logsRes.data : []);
-        setProjects(Array.isArray(projRes.data) ? projRes.data : []);
-        setAppointments(Array.isArray(apptRes.data) ? apptRes.data : []);
+        setTimeLogs(Array.isArray(logs) ? logs : []);
+        setProjects(Array.isArray(proj) ? proj : []);
+        setAppointments(Array.isArray(appt) ? appt : []);
         setErr(null);
       } catch (e: any) {
-        setErr(e?.response?.data || "Failed to load time logs");
+        setErr(normalizeError(e, "Failed to load time logs"));
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  // ---------------------------------------------
-  // Derived
-  // ---------------------------------------------
+  /* ---------------------- Derived ---------------------- */
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return timeLogs;
     return timeLogs.filter((l) => {
       const bag = [
-        l.projectName,
-        l.appointmentDescription,
-        l.workDescription,
-        l.notes || "",
+        l.projectName ?? "",
+        l.appointmentDescription ?? "",
+        l.workDescription ?? "",
+        l.notes ?? "",
         new Date(l.startTime).toLocaleDateString(),
       ]
         .filter(Boolean)
@@ -154,12 +170,10 @@ const TimeLogs: React.FC = () => {
     };
   }, [timeLogs]);
 
-  // ---------------------------------------------
-  // Helpers
-  // ---------------------------------------------
-  const appointmentLabel = (a: AppointmentLite) => {
-    const plate = a.vehicle?.registrationNumber;
-    const when = a.scheduledDateTime || a.appointmentDate;
+  /* ---------------------- Helpers ---------------------- */
+  const appointmentLabel = (a: AssignedAppointmentDTO) => {
+    const plate = a.vehicleRegistrationNumber;
+    const when = a.scheduledDateTime;
     if (plate && when) return `${plate} — ${new Date(when).toLocaleString()}`;
     if (plate) return plate;
     if (when) return new Date(when).toLocaleString();
@@ -172,11 +186,13 @@ const TimeLogs: React.FC = () => {
     if (!formData.startTime) ne.startTime = "Start time is required";
     if (!formData.endTime) ne.endTime = "End time is required";
 
-    if (formData.workDate && formData.startTime && formData.endTime) {
-      const start = new Date(`${formData.workDate}T${formData.startTime}:00`);
-      const end = new Date(`${formData.workDate}T${formData.endTime}:00`);
-      if (end <= start) ne.endTime = "End time must be after start time";
-    }
+    const start = new Date(`${formData.workDate}T${formData.startTime}:00`);
+    const end = new Date(`${formData.workDate}T${formData.endTime}:00`);
+    const nowD = now();
+
+    if (end <= start) ne.endTime = "End time must be after start time";
+    if (start > nowD) ne.startTime = "Start time cannot be in the future";
+    if (end > nowD) ne.endTime = "End time cannot be in the future";
 
     if (!formData.projectId && !formData.appointmentId) {
       ne.projectId = "Pick a Project or an Appointment";
@@ -193,32 +209,32 @@ const TimeLogs: React.FC = () => {
     return Object.keys(ne).length === 0;
   };
 
-  // ---------------------------------------------
-  // CRUD Handlers
-  // ---------------------------------------------
-  const openModal = (log?: TimeLog) => {
+  /* ---------------------- CRUD ---------------------- */
+  const openModal = (log?: TimeLogDTO) => {
     if (log) {
       setEditMode(true);
       setSelectedLog(log);
       const s = new Date(log.startTime);
       const e = new Date(log.endTime);
       const pad = (n: number) => String(n).padStart(2, "0");
-      setFormData({
-        workDate: s.toISOString().split("T")[0],
-        startTime: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
-        endTime: `${pad(e.getHours())}:${pad(e.getMinutes())}`,
-        projectId: log.projectId ? String(log.projectId) : "",
-        appointmentId: log.appointmentId ? String(log.appointmentId) : "",
-        workDescription: log.workDescription || "",
-        notes: log.notes || "",
-      });
+      setFormData(
+        clampToNowIfToday({
+          workDate: s.toISOString().split("T")[0],
+          startTime: `${pad(s.getHours())}:${pad(s.getMinutes())}`,
+          endTime: `${pad(e.getHours())}:${pad(e.getMinutes())}`,
+          projectId: log.projectId ? String(log.projectId) : "",
+          appointmentId: log.appointmentId ? String(log.appointmentId) : "",
+          workDescription: log.workDescription || "",
+          notes: log.notes || "",
+        })
+      );
     } else {
       setEditMode(false);
       setSelectedLog(null);
       setFormData({
-        workDate: new Date().toISOString().split("T")[0],
-        startTime: "09:00",
-        endTime: "17:00",
+        workDate: todayDateStr(),
+        startTime: toHHMM(new Date(now().getTime() - 10 * 60 * 1000)),
+        endTime: toHHMM(now()),
         projectId: "",
         appointmentId: "",
         workDescription: "",
@@ -240,13 +256,18 @@ const TimeLogs: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    if (name === "projectId" && value) {
-      setFormData((f) => ({ ...f, projectId: value, appointmentId: "" }));
-    } else if (name === "appointmentId" && value) {
-      setFormData((f) => ({ ...f, appointmentId: value, projectId: "" }));
-    } else {
-      setFormData((f) => ({ ...f, [name]: value }));
-    }
+    setFormData((prev) => {
+      let next = { ...prev, [name]: value } as TimeLogFormData;
+
+      // XOR: project vs appointment
+      if (name === "projectId" && value) next.appointmentId = "";
+      if (name === "appointmentId" && value) next.projectId = "";
+
+      // Clamp if today (avoid future times)
+      next = clampToNowIfToday(next);
+
+      return next;
+    });
     if (errors[name as keyof TimeLogFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -255,55 +276,59 @@ const TimeLogs: React.FC = () => {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    const token = localStorage.getItem("token");
-    const headers = { Authorization: `Bearer ${token}` };
 
-    const payload: Record<string, any> = {
+    const payload: TimeLogRequestDTO = {
       startTime: `${formData.workDate}T${formData.startTime}:00`,
       endTime: `${formData.workDate}T${formData.endTime}:00`,
       workDescription: formData.workDescription.trim(),
       notes: formData.notes.trim() ? formData.notes.trim() : null,
+      ...(formData.projectId ? { projectId: parseInt(formData.projectId, 10) } : {}),
+      ...(formData.appointmentId ? { appointmentId: parseInt(formData.appointmentId, 10) } : {}),
     };
-    if (formData.projectId) payload.projectId = parseInt(formData.projectId, 10);
-    if (formData.appointmentId) payload.appointmentId = parseInt(formData.appointmentId, 10);
 
     try {
       if (editMode && selectedLog) {
-        await axios.put(
-          `http://localhost:8080/api/employee/timelogs/${selectedLog.id}`,
-          payload,
-          { headers }
-        );
+        await apiUpdateTimeLog(selectedLog.id, payload);
       } else {
-        await axios.post(`http://localhost:8080/api/employee/timelogs`, payload, { headers });
+        await apiCreateTimeLog(payload);
       }
-      // refresh
-      const res = await axios.get<TimeLog[]>(
-        "http://localhost:8080/api/employee/timelogs",
-        { headers }
-      );
-      setTimeLogs(Array.isArray(res.data) ? res.data : []);
+      await refreshLogs();
       closeModal();
     } catch (e: any) {
-      alert(e?.response?.data || "Failed to save log");
+      alert(normalizeError(e, "Failed to save log"));
     }
   };
 
   const remove = async (id: number) => {
     if (!confirm("Delete this time log?")) return;
-    const token = localStorage.getItem("token");
-    const headers = { Authorization: `Bearer ${token}` };
     try {
-      await axios.delete(`http://localhost:8080/api/employee/timelogs/${id}`, { headers });
+      await apiDeleteTimeLog(id);
       setTimeLogs((prev) => prev.filter((l) => l.id !== id));
-    } catch {
-      alert("Failed to delete log");
+    } catch (e: any) {
+      alert(normalizeError(e, "Failed to delete log"));
     }
   };
 
-  // ---------------------------------------------
-  // UI
-  // ---------------------------------------------
+  /* ---------------------- “Quick Add (Sample)” ---------------------- */
+  const createThatOneLog = async () => {
+    try {
+      await apiCreateTimeLog({
+        appointmentId: 5,
+        startTime: "2025-11-06T16:40:00",
+        endTime: "2025-11-06T16:50:00",
+        workDescription:
+          "Performed routine maintenance including oil change, filter replacement, and brake inspection",
+        notes:
+          "Customer requested extra attention to brake system due to recent noise",
+      });
+      await refreshLogs();
+      alert("Sample time log created successfully.");
+    } catch (e: any) {
+      alert(normalizeError(e, "Failed to create the time log"));
+    }
+  };
+
+  /* ---------------------- UI ---------------------- */
   return (
     <div className="relative text-white">
       {/* Backdrop */}
@@ -339,9 +364,21 @@ const TimeLogs: React.FC = () => {
           </div>
         </div>
 
-        <button onClick={() => openModal()} className={`${BTN_BASE} ${ACCENT_GRADIENT} text-slate-950 hover:brightness-110`}>
-          <Plus className="w-5 h-5" /> Log Time
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={createThatOneLog}
+            className={`${BTN_BASE} bg-white/5 hover:bg-white/10`}
+            title="Create the specific sample time log"
+          >
+            Quick Add (Sample)
+          </button>
+          <button
+            onClick={() => openModal()}
+            className={`${BTN_BASE} ${ACCENT_GRADIENT} text-slate-950 hover:brightness-110`}
+          >
+            <Plus className="w-5 h-5" /> Log Time
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -381,13 +418,16 @@ const TimeLogs: React.FC = () => {
             className={`${INPUT} pl-10`}
           />
         </div>
+        {err ? (
+          <div className="mt-3 rounded-lg border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-rose-200 text-sm">
+            {err}
+          </div>
+        ) : null}
       </div>
 
       {/* Table */}
       <div className={`${CARD} mt-6 overflow-hidden`}>
-        {err ? (
-          <div className="p-12 text-center text-rose-300">{err}</div>
-        ) : loading ? (
+        {loading ? (
           <div className="p-12 text-center">
             <div className="inline-block w-8 h-8 border-4 border-cyan-300 border-t-transparent rounded-full animate-spin"></div>
             <p className="mt-4 text-slate-300/90">Loading time logs...</p>
@@ -516,7 +556,7 @@ const TimeLogs: React.FC = () => {
                     name="workDate"
                     value={formData.workDate}
                     onChange={onChangeField}
-                    max={new Date().toISOString().split("T")[0]}
+                    max={todayDateStr()}
                     className={`${INPUT} ${errors.workDate ? "ring-rose-500/30" : ""}`}
                   />
                   {errors.workDate && <p className="text-rose-300 text-xs mt-1">{errors.workDate}</p>}
@@ -555,7 +595,7 @@ const TimeLogs: React.FC = () => {
                 {/* Project */}
                 <div>
                   <label className="block text-sm font-medium text-slate-200 mb-1">Project</label>
-                  <select
+                <select
                     name="projectId"
                     value={formData.projectId}
                     onChange={onChangeField}
