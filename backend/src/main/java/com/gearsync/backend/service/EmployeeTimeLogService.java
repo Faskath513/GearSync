@@ -74,6 +74,16 @@ public class EmployeeTimeLogService {
             }
 
             timeLog.setAppointment(appointment);
+            
+            // Automatically mark appointment as COMPLETED when time log is created
+            if (appointment.getStatus() != AppointmentStatus.COMPLETED) {
+                appointment.setStatus(AppointmentStatus.COMPLETED);
+                appointment.setActualEndTime(request.getEndTime());
+                if (appointment.getActualStartTime() == null) {
+                    appointment.setActualStartTime(request.getStartTime());
+                }
+                appointmentRepository.save(appointment);
+            }
         } else {
             Project project = projectRepository.findById(request.getProjectId())
                     .orElseThrow(() -> new ResourceNotFoundException(
@@ -86,6 +96,16 @@ public class EmployeeTimeLogService {
             }
 
             timeLog.setProject(project);
+            
+            // Automatically mark project as COMPLETED when time log is created
+            if (project.getStatus() != ProjectStatus.COMPLETED) {
+                project.setStatus(ProjectStatus.COMPLETED);
+                project.setCompletionDate(request.getEndTime());
+                if (project.getStartDate() == null) {
+                    project.setStartDate(request.getStartTime());
+                }
+                projectRepository.save(project);
+            }
         }
 
         TimeLog savedTimeLog = timeLogRepository.save(timeLog);
